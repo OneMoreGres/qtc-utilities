@@ -21,7 +21,7 @@ struct Include
   QString include;
   int line;
   bool isLocal;
-  bool isResolvedNow;
+  bool isJustResolved;
 };
 
 inline bool operator== (const Include &lhs, const Include &rhs)

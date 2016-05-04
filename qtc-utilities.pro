@@ -16,7 +16,8 @@ SOURCES += \
     src/organizeincludes/IncludesOptionsPage.cpp \
     src/organizeincludes/Include.cpp \
     src/organizeincludes/IncludeMap.cpp \
-    src/organizeincludes/IncludesExtractor.cpp
+    src/organizeincludes/IncludesExtractor.cpp \
+    src/organizeincludes/Document.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -36,7 +37,8 @@ HEADERS += \
     src/organizeincludes/IncludesConstants.h \
     src/organizeincludes/Include.h \
     src/organizeincludes/IncludeMap.h \
-    src/organizeincludes/IncludesExtractor.h
+    src/organizeincludes/IncludesExtractor.h \
+    src/organizeincludes/Document.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts

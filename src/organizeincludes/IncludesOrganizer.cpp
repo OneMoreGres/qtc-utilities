@@ -1,141 +1,27 @@
 #include "IncludesOrganizer.h"
-#include "IncludesSettings.h"
 #include "IncludesConstants.h"
 #include "Include.h"
 #include "IncludesOptionsPage.h"
 #include "IncludesExtractor.h"
 #include "IncludeMap.h"
+#include "Document.h"
 
 #include <coreplugin/actionmanager/actionmanager.h>
 #include <coreplugin/actionmanager/actioncontainer.h>
 #include <coreplugin/editormanager/editormanager.h>
-#include <coreplugin/icore.h>
 
-#include <texteditor/texteditor.h>
-#include <texteditor/textdocument.h>
-
-#include <cplusplus/Overview.h>
-#include <cplusplus/TypeOfExpression.h>
-
-#include <extensionsystem/pluginmanager.h>
 #include <extensionsystem/iplugin.h>
-
-#include <cpptools/cppmodelmanager.h>
-#include <cpptools/cpplocatorfilter.h>
-#include <cpptools/projectpart.h>
 
 #include <QMenu>
 #include <QTextBlock>
 #include <QDir>
-#include <QComboBox>
-#include <QBoxLayout>
 
 using namespace Core;
-using namespace CppTools;
-using namespace CPlusPlus;
-
-namespace {
-// copied from includeutils.cpp
-int lineAfterFirstComment (const QTextDocument *textDocument)
-{
-  int insertLine = -1;
-
-  QTextBlock block = textDocument->firstBlock ();
-  while (block.isValid ()) {
-    const QString trimmedText = block.text ().trimmed ();
-
-    // Only skip the first comment!
-    if (trimmedText.startsWith (QLatin1String ("/*"))) {
-      do {
-        const int pos = block.text ().indexOf (QLatin1String ("*/"));
-        if (pos > -1) {
-          insertLine = block.blockNumber () + 2;
-          break;
-        }
-        block = block.next ();
-      }
-      while (block.isValid ());
-      break;
-    }
-    else if (trimmedText.startsWith (QLatin1String ("//"))) {
-      block = block.next ();
-      while (block.isValid ()) {
-        if (!block.text ().trimmed ().startsWith (QLatin1String ("//"))) {
-          insertLine = block.blockNumber () + 1;
-          break;
-        }
-        block = block.next ();
-      }
-      break;
-    }
-
-    if (!trimmedText.isEmpty ()) {
-      break;
-    }
-    block = block.next ();
-  }
-
-  return insertLine;
-}
-}
 
 
 namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
-
-
-
-using StringFiles = QList<QString>;
-
-
-
-StringFiles getFileIncludePaths (const QString &file)
-{
-  StringFiles result;
-  auto model = CppModelManager::instance ();
-  auto parts = model->projectPart (file);
-  for (const auto &part: parts) {
-    for (const auto &path: part->headerPaths) {
-      result << path.path;
-    }
-  }
-  return result;
-}
-
-Includes getDocumentIncludes (Document::Ptr document)
-{
-  Includes includes;
-  for (const auto &i: document->resolvedIncludes ()) {
-    includes << (i);
-  }
-  for (const auto &i: document->unresolvedIncludes ()) {
-    includes << (i);
-  }
-  return includes;
-}
-
-
-void addIncludeToDocument (const Include &include, Document::Ptr document,
-                           Snapshot &snapshot)
-{
-  document->addIncludeFile (Document::Include (include.include, include.file,
-                                               include.line, Client::IncludeLocal));
-  if (!snapshot.contains (include.file)) {
-    QFile f (include.file);
-    if (f.open (QFile::ReadOnly)) {
-      auto resolved = snapshot.preprocessedDocument (f.readAll (), include.file);
-      resolved->parse ();
-      resolved->check ();
-      snapshot.insert (resolved);
-    }
-  }
-}
-
-
-
-
-
 
 QString resolveInclude (const QString &nameOnly, const QString &asIncluded,
                         const QString &path)
@@ -154,7 +40,7 @@ QString resolveInclude (const QString &nameOnly, const QString &asIncluded,
   return {};
 }
 
-void resolveIncludes (Includes &includes, const StringFiles &includePaths)
+void resolveIncludes (Includes &includes, const QList<QString> &includePaths)
 {
   for (auto &i: includes) {
     if (!i.file.isEmpty ()) {
@@ -164,7 +50,7 @@ void resolveIncludes (Includes &includes, const StringFiles &includePaths)
     for (const auto &path: includePaths) {
       i.file = resolveInclude (nameOnly, i.include, path);
       if (!i.file.isEmpty ()) {
-        i.isResolvedNow = true;
+        i.isJustResolved = true;
         break;
       }
     }
@@ -174,12 +60,13 @@ void resolveIncludes (Includes &includes, const StringFiles &includePaths)
 
 
 
-void renameIncludes (Includes &includes, const StringFiles &includePaths,
-                     const QString &localPath)
+void renameIncludes (Includes &includes, const QList<QString> &includePaths,
+                     const QString &projectPath)
 {
   for (auto &i: includes) {
-    i.isLocal = i.file.startsWith (localPath);
-    if (!i.include.isEmpty () && !i.isResolvedNow) {
+    i.isLocal = i.file.startsWith (projectPath);
+
+    if (!(i.include.isEmpty () || i.isJustResolved)) {
       continue;
     }
     auto file = i.file;
@@ -202,8 +89,7 @@ void renameIncludes (Includes &includes, const StringFiles &includePaths,
 
 
 
-void sortIncludes (Includes &includes, Order order,
-                   const QString &localPath)
+void sortIncludes (Includes &includes, Order order, const QString &projectPath)
 {
 #ifdef Q_OS_LINUX
   QString systemPath = QStringLiteral ("/usr/");
@@ -214,9 +100,9 @@ void sortIncludes (Includes &includes, Order order,
     case GeneralFirst:
     case SpecificFirst:
       std::sort (includes.begin (), includes.end (),
-                 [&localPath, &systemPath](const Include &l, const Include &r) {
-            if (l.file.startsWith (localPath)) {
-              if (r.file.startsWith (localPath)) {
+                 [&projectPath, &systemPath](const Include &l, const Include &r) {
+            if (l.file.startsWith (projectPath)) {
+              if (r.file.startsWith (projectPath)) {
                 return l.file > r.file;
               }
               return true;
@@ -252,24 +138,17 @@ void sortIncludes (Includes &includes, Order order,
 }
 
 
-void writeIncludes (QTextDocument *textDocument, Document::Ptr cppDocument,
-                    const Includes &includes)
-{
-  QList<int> oldLines;
-  auto old = cppDocument->resolvedIncludes () + cppDocument->unresolvedIncludes ();
-  std::transform (old.cbegin (), old.cend (), std::back_inserter (oldLines),
-                  [] (const Document::Include &i) -> int {
-          return Include (i).isMoc () ? -1 : i.line () - 1;
-        });
 
+void writeIncludes (Document &document, const Includes &includes)
+{
+  auto textDocument = document.textDocument ();
+  auto oldLines = document.includeLines ();
   std::sort (oldLines.begin (), oldLines.end (), std::greater<int>());
 
   std::for_each (oldLines.cbegin (), oldLines.cend (), [textDocument] (int i) {
-          if (i > -1) {
-            QTextCursor c (textDocument->findBlockByLineNumber (i));
-            c.select (QTextCursor::BlockUnderCursor);
-            c.removeSelectedText ();
-          }
+          QTextCursor c (textDocument->findBlockByLineNumber (i));
+          c.select (QTextCursor::BlockUnderCursor);
+          c.removeSelectedText ();
         });
 
   if (includes.isEmpty ()) {
@@ -295,7 +174,7 @@ void writeIncludes (QTextDocument *textDocument, Document::Ptr cppDocument,
         });
 
   QTextCursor c (textDocument);
-  int linesToMove = lineAfterFirstComment (textDocument) - 1;
+  int linesToMove = document.lineAfterFirstComment () - 1;
   if (linesToMove > 0) {
     c.movePosition (QTextCursor::Down, QTextCursor::MoveAnchor, linesToMove);
   }
@@ -331,48 +210,36 @@ void IncludesOrganizer::registerActions ()
 
 void IncludesOrganizer::organize (int actions) const
 {
-  auto idocument = EditorManager::currentDocument ();
-  auto editor = qobject_cast<TextEditor::BaseTextEditor *>(EditorManager::currentEditor ());
-  if (!idocument || !editor || !options_) {
+  Document document (EditorManager::currentDocument ());
+  if (!options_ || !document.isValid ()) {
     return;
   }
-  auto model = CppModelManager::instance ();
-  auto snapshot = model->snapshot ();
-  auto documentFile = idocument->filePath ().toString ();
-  auto document = snapshot.preprocessedDocument (idocument->contents (), documentFile);
-  if (!document || !document->parse ()) {
-    qDebug () << "parse failed";
-    return;
-  }
-  document->check ();
 
-  Includes includes = getDocumentIncludes (document);
-  qDebug () << "doc includes" << includes;
-
-  auto includePaths = getFileIncludePaths (documentFile);
+  auto includePaths = document.includePaths ();
   if (includePaths.isEmpty ()) {
     qDebug () << "empty include paths";
     return;
   }
 
+  Includes includes = document.includes ();
+  qDebug () << "doc includes" << includes;
+
   if (actions | Resolve) {
     resolveIncludes (includes, includePaths);
     qDebug () << "resolved includes" << includes;
     for (const auto &i: includes) {
-      if (i.isResolvedNow) {
-        addIncludeToDocument (i, document, snapshot);
+      if (i.isJustResolved) {
+        document.addInclude (i);
       }
     }
   }
 
-  Includes usedIncludes = IncludesExtractor (document, snapshot) ();
+  Includes usedIncludes = IncludesExtractor (document) ();
   qDebug () << "usedIncludes" << usedIncludes;
-  usedIncludes.removeAll (documentFile);
 
-  IncludeMap map (snapshot, includes, usedIncludes);
   const auto &settings = options_->settings ();
+  IncludeMap map (document.snapshot (), includes, usedIncludes);
   map.organize (settings.policy);
-
   qDebug () << "left includers/includes" <<  map.includers () << map.includes ();
 
   if (actions | Remove) {
@@ -387,15 +254,14 @@ void IncludesOrganizer::organize (int actions) const
     includes += added;
   }
 
-  auto localPath = *includePaths.begin ();     // TODO ensure local is first
-  renameIncludes (includes, includePaths, localPath);
+  auto projectPath = document.projectPath ();
+  renameIncludes (includes, includePaths, projectPath);
 
   if (actions | Sort) {
-    sortIncludes (includes, settings.order, localPath);
+    sortIncludes (includes, settings.order, projectPath);
   }
 
-  auto textDocument = editor->textDocument ()->document ();
-  writeIncludes (textDocument, document, includes);
+  writeIncludes (document, includes);
 }
 
 

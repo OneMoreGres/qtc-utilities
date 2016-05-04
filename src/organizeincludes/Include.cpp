@@ -11,7 +11,7 @@ Include::Include (const CPlusPlus::Document::Include &source) : Include (
 }
 
 Include::Include (const QString &file, const QString &include, int line, bool isLocal)
-  : file (file), include (include), line (line), isLocal (isLocal), isResolvedNow (false)
+  : file (file), include (include), line (line), isLocal (isLocal), isJustResolved (false)
 {
 }
 

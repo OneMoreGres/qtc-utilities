@@ -3,7 +3,9 @@
 #include "Include.h"
 #include "IncludesSettings.h"
 
-#include <cplusplus/CppDocument.h>
+namespace CPlusPlus {
+class Snapshot;
+}
 
 namespace QtcUtilities {
 namespace Internal {
@@ -21,13 +23,11 @@ class IncludeMap
     void organize (Policy policy);
 
   private:
-
     Includes exclusiveIncluders () const;
     Include biggestIncluder () const;
     Includes includersOf (const Include &file) const;
     void removeIncluder (const Include &file);
 
-  private:
     using Nodes = QMap<Include, Includes>;
     Nodes includers_;
     Nodes includes_;

@@ -1,4 +1,5 @@
 #include "IncludesExtractor.h"
+#include "Document.h"
 
 #include <extensionsystem/pluginmanager.h>
 
@@ -10,11 +11,11 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
-IncludesExtractor::IncludesExtractor (Document::Ptr document, const Snapshot &snapshot)
-  : ASTVisitor (document->translationUnit ()),
+IncludesExtractor::IncludesExtractor (const Document &document)
+  : ASTVisitor (document.translationUnit ()),
   document_ (document), locatorFilter_ (getLocatorFilter ())
 {
-  expressionType_.init (document, snapshot);
+  expressionType_.init (document.cppDocument (), document.snapshot ());
 }
 
 
@@ -34,6 +35,7 @@ Includes IncludesExtractor::operator () ()
     return usages_;
   }
   accept (translationUnit ()->ast ());
+  usages_.removeAll (document_.file ());
   return usages_;
 }
 
@@ -44,15 +46,6 @@ void IncludesExtractor::addUsage (const QString &file)
   if (!usages_.contains (include)) {
     usages_ << include;
   }
-}
-
-
-Scope * IncludesExtractor::scopeAtToken (unsigned token)
-{
-  unsigned line = 0;
-  unsigned column = 0;
-  document_->translationUnit ()->getTokenStartPosition (token, &line, &column);
-  return document_->scopeAt (line);
 }
 
 
@@ -85,12 +78,12 @@ QString IncludesExtractor::fileNameViaLocator (const QString &name, int types)
 
 bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
 {
-  auto scope = scopeAtToken (ast->firstToken ());
+  auto scope = document_.scopeAtToken (ast->firstToken ());
   auto typeName = overview_ (ast->name->name);
   auto matches = expressionType_ (typeName.toUtf8 (), scope);
   for (const auto &i: matches) {
     if (const auto declaration = i.declaration ()) {
-      if (i.declaration ()->isForwardClassDeclaration ()) {       // check if symbol is reference
+      if (i.declaration ()->isForwardClassDeclaration ()) {  // check if symbol is reference
         continue;
       }
       auto fileName = QString::fromUtf8 (declaration->fileName ());
@@ -110,9 +103,9 @@ bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
 
 bool IncludesExtractor::visit (IdExpressionAST *ast)
 {
-  auto scope = scopeAtToken (ast->firstToken ());
+  auto scope = document_.scopeAtToken (ast->firstToken ());
   auto callName = overview_ (ast->name->name);
-  auto matches = expressionType_ (ast, document_, scope);
+  auto matches = expressionType_ (ast, document_.cppDocument (), scope);
   for (const auto &i: matches) {
     if (const auto declaration = i.declaration ()) {
       auto fileName = QString::fromUtf8 (declaration->fileName ());

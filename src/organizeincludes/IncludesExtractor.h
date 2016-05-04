@@ -11,11 +11,13 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
+class Document;
+
 //! Extracts usages of symbols/function calls with its declaration files.
 class IncludesExtractor : public CPlusPlus::ASTVisitor
 {
   public:
-    IncludesExtractor (CPlusPlus::Document::Ptr document, const CPlusPlus::Snapshot &snapshot);
+    explicit IncludesExtractor (const Document &document);
 
     Includes operator () ();
 
@@ -24,7 +26,6 @@ class IncludesExtractor : public CPlusPlus::ASTVisitor
 
   private:
     void addUsage (const QString &file);
-    CPlusPlus::Scope * scopeAtToken (unsigned token);
     QString fileNameViaLocator (const QString &name, int types);
     Core::ILocatorFilter * getLocatorFilter () const;
 
@@ -33,11 +34,12 @@ class IncludesExtractor : public CPlusPlus::ASTVisitor
     CPlusPlus::Overview overview_;
     Includes usages_;
 
-    CPlusPlus::Document::Ptr document_;
+    const Document &document_;
     Core::ILocatorFilter *locatorFilter_;
 
 
 #ifdef QT_DEBUG
+    QString indent;
 
   public:
     bool preVisit (CPlusPlus::AST *a) override
@@ -51,8 +53,6 @@ class IncludesExtractor : public CPlusPlus::ASTVisitor
     {
       indent = indent.mid (1);
     }
-
-    QString indent;
 #endif
 };
 

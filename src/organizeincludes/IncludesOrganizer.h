@@ -1,7 +1,5 @@
 #pragma once
 
-#include "IncludesSettings.h"
-
 #include <QPointer>
 
 namespace ExtensionSystem {

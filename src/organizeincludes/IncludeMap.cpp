@@ -1,7 +1,7 @@
 #include "IncludeMap.h"
 
-//using namespace Core;
-//using namespace CppTools;
+#include <cplusplus/CppDocument.h>
+
 using namespace CPlusPlus;
 
 namespace QtcUtilities {
@@ -13,14 +13,15 @@ Includes intersected (const QSet<QString> &lhs, const Includes &rhs)
   Includes result;
   for (const auto &i: rhs) {
     if (lhs.contains (i.file)) {
-      result <<  (i);
+      result << i;
     }
   }
   return result;
 }
 
 
-IncludeMap::IncludeMap (const Snapshot &snapshot, const Includes &includers, const Includes &includes)
+IncludeMap::IncludeMap (const Snapshot &snapshot, const Includes &includers,
+                        const Includes &includes)
 {
   for (const auto &includer: includers) {
     auto interesting = snapshot.allIncludesForDocument (includer.file);
