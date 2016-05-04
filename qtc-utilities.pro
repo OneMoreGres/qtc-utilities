@@ -10,7 +10,8 @@ SOURCES += \
     src/clangtools/AutoCheckEvents.cpp \
     src/clangtools/ToolRunner.cpp \
     src/clangtools/ToolOutputParser.cpp \
-    src/clangtools/ToolOptionsPage.cpp
+    src/clangtools/ToolOptionsPage.cpp \
+    src/dockedoutput/DockedOutput.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -22,7 +23,8 @@ HEADERS += \
     src/clangtools/ToolOutputParser.h \
     src/clangtools/ToolOptionsPage.h \
     src/clangtools/CheckTypes.h \
-    src/clangtools/ClangToolsConstants.h
+    src/clangtools/ClangToolsConstants.h \
+    src/dockedoutput/DockedOutput.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts

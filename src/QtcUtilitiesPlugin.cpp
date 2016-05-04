@@ -1,5 +1,6 @@
 #include "QtcUtilitiesPlugin.h"
 #include "clangtools/ClangTools.h"
+#include "dockedoutput/DockedOutput.h"
 
 #include <coreplugin/icore.h>
 
@@ -32,6 +33,7 @@ bool QtcUtilitiesPlugin::initialize (const QStringList & /*arguments*/, QString 
   // In the initialize function, a plugin can be sure that the plugins it
   // depends on have initialized their members.
 
+  addAutoReleasedObject (new DockedOutput::DockedOutputPane);
   addAutoReleasedObject (new ClangTools::ClangTools (this));
 
   initTranslation ();
