@@ -5,12 +5,24 @@ include(paths.pri)
 # QtcUtilities files
 
 SOURCES += \
-    src/QtcUtilitiesPlugin.cpp
+    src/QtcUtilitiesPlugin.cpp \
+    src/clangtools/ClangTools.cpp \
+    src/clangtools/AutoCheckEvents.cpp \
+    src/clangtools/ToolRunner.cpp \
+    src/clangtools/ToolOutputParser.cpp \
+    src/clangtools/ToolOptionsPage.cpp
 
 HEADERS += \
     src/Constants.h \
     src/PluginGlobal.h \
-    src/QtcUtilitiesPlugin.h
+    src/QtcUtilitiesPlugin.h \
+    src/clangtools/ClangTools.h \
+    src/clangtools/AutoCheckEvents.h \
+    src/clangtools/ToolRunner.h \
+    src/clangtools/ToolOutputParser.h \
+    src/clangtools/ToolOptionsPage.h \
+    src/clangtools/CheckTypes.h \
+    src/clangtools/ClangToolsConstants.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
@@ -44,3 +56,6 @@ QTC_PLUGIN_RECOMMENDS += \
 ###### End _dependencies.pri contents ######
 
 include($$QTCREATOR_SOURCES/src/qtcreatorplugin.pri)
+
+RESOURCES += \
+    resources.qrc

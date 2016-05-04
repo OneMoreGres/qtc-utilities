@@ -1,4 +1,5 @@
 #include "QtcUtilitiesPlugin.h"
+#include "clangtools/ClangTools.h"
 
 #include <coreplugin/icore.h>
 
@@ -30,6 +31,8 @@ bool QtcUtilitiesPlugin::initialize (const QStringList & /*arguments*/, QString 
   // Connect to other plugins' signals
   // In the initialize function, a plugin can be sure that the plugins it
   // depends on have initialized their members.
+
+  addAutoReleasedObject (new ClangTools::ClangTools (this));
 
   initTranslation ();
   return true;
