@@ -26,7 +26,7 @@ IncludeMap::IncludeMap (const Snapshot &snapshot, const Includes &includers,
   for (const auto &includer: includers) {
     auto interesting = snapshot.allIncludesForDocument (includer.file);
     interesting.insert (includer.file);
-    includers_.insert (includer, intersected (interesting, includes));
+    includers_.insertMulti (includer, intersected (interesting, includes));
 
     for (const auto &included: includers_[includer]) {
       auto &names = includes_[included];
