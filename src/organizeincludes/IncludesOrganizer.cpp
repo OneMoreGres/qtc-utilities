@@ -52,8 +52,8 @@ bool updateInclude (Include &i, const Document &document)
         });
 
   i.include = file.startsWith (*best)
-              ? i.file.mid (best->size () + 1)
-              : QFileInfo (i.file).fileName ();
+              ? file.mid (best->size () + 1)
+              : QFileInfo (file).fileName ();
   return true;
 }
 
