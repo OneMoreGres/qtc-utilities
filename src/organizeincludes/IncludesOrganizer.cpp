@@ -32,6 +32,31 @@ void renamePrivateInclude (Include &include)
       include.file = dir.absoluteFilePath (files.first ());
     }
   }
+  if (include.file.contains (QDir::separator () + QLatin1String ("c++")
+                             + QDir::separator ())) {
+    // search for @headername{} comment
+    QFile f (include.file);
+    if (!f.open (QFile::ReadOnly)) {
+      return;
+    }
+    auto readSize = 100 * 100; // 100 lines with 100 chars, suppose comment is there
+    auto content = f.read (readSize);
+    QByteArray startPattern = "@headername{";
+    auto start = content.indexOf (startPattern);
+    auto end = content.indexOf ("}", start);
+    if (start == -1 || end == -1) {
+      return;
+    }
+    auto dataStart = start + startPattern.size ();
+    auto publicFile = QString::fromUtf8 (content.mid (dataStart, end - dataStart));
+    auto dir = QDir (include.file);
+    while (dir.cdUp ()) { // 1st call removes file name from path
+      if (dir.exists (publicFile)) {
+        include.file = dir.absoluteFilePath (publicFile);
+        break;
+      }
+    }
+  }
 }
 
 
