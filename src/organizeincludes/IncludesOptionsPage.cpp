@@ -4,6 +4,7 @@
 #include <coreplugin/icore.h>
 
 #include <QComboBox>
+#include <QCheckBox>
 #include <QBoxLayout>
 #include <QLabel>
 
@@ -14,6 +15,7 @@ namespace OrganizeIncludes {
 const QString SETTINGS_GROUP = QLatin1String ("OrganizeIncludes");
 const QString SETTINGS_POLICY = QLatin1String ("policy");
 const QString SETTINGS_ORDER = QLatin1String ("order");
+const QString SETTINGS_ORGANIZE_ACTIONS = QLatin1String ("organizeActions");
 
 
 class OptionsWidget : public QWidget
@@ -27,10 +29,20 @@ class OptionsWidget : public QWidget
   private:
     QComboBox *policyCombo_;
     QComboBox *orderCombo_;
+    QCheckBox *sortCheck_;
+    QCheckBox *addCheck_;
+    QCheckBox *removeCheck_;
+    QCheckBox *resolveheck_;
+    QCheckBox *renameCheck_;
 };
 
 OptionsWidget::OptionsWidget ()
-  : policyCombo_ (new QComboBox), orderCombo_ (new QComboBox)
+  : policyCombo_ (new QComboBox), orderCombo_ (new QComboBox),
+  sortCheck_ (new QCheckBox (tr ("Sort"))),
+  addCheck_ (new QCheckBox (tr ("Add missing"))),
+  removeCheck_ (new QCheckBox (tr ("Remove unused"))),
+  resolveheck_ (new QCheckBox (tr ("Resolve"))),
+  renameCheck_ (new QCheckBox (tr ("Rename")))
 {
   QMap<int, QString> policies;
   policies[MinimalEntries] = tr ("Minimal entries");
@@ -52,14 +64,31 @@ OptionsWidget::OptionsWidget ()
 
   auto layout = new QGridLayout;
 
-  layout->addWidget (new QLabel (tr ("Include generation policy")), 0, 0);
-  layout->addWidget (policyCombo_, 1, 0);
+  auto row = 0;
+  layout->addWidget (new QLabel (tr ("Include policy")), row, 0);
+  layout->addWidget (new QLabel (tr ("Include order")), row, 1);
 
-  layout->addWidget (new QLabel (tr ("Include order")), 0, 1);
-  layout->addWidget (orderCombo_, 1, 1);
+  ++row;
+  layout->addWidget (policyCombo_, row, 0);
+  layout->addWidget (orderCombo_, row, 1);
 
+  ++row;
+  layout->addWidget (new QLabel (tr ("What 'organize' means")), row, 0, 1, 2);
+
+  ++row;
+  layout->addWidget (sortCheck_, row, 0);
+  layout->addWidget (addCheck_, row, 1);
+
+  ++row;
+  layout->addWidget (removeCheck_, row, 0);
+  layout->addWidget (resolveheck_, row, 1);
+
+  ++row;
+  layout->addWidget (renameCheck_, row, 0);
+
+  ++row;
   layout->addItem (new QSpacerItem (10, 10, QSizePolicy::Expanding,
-                                    QSizePolicy::Expanding), 2, 0, 1, 2);
+                                    QSizePolicy::Expanding), row, 0, 1, 2);
   setLayout (layout);
 }
 
@@ -67,12 +96,24 @@ void OptionsWidget::set (const Settings &settings)
 {
   policyCombo_->setCurrentIndex (settings.policy);
   orderCombo_->setCurrentIndex (settings.order);
+  sortCheck_->setChecked (settings.organizeActions & Sort);
+  addCheck_->setChecked (settings.organizeActions & Add);
+  removeCheck_->setChecked (settings.organizeActions & Remove);
+  resolveheck_->setChecked (settings.organizeActions & Resolve);
+  renameCheck_->setChecked (settings.organizeActions & Rename);
 }
 
 void OptionsWidget::get (Settings &settings) const
 {
   settings.policy = Policy (policyCombo_->currentIndex ());
   settings.order = Order (orderCombo_->currentIndex ());
+  auto actions = 0;
+  actions = actions | (sortCheck_->isChecked () ? Sort : 0);
+  actions = actions | (addCheck_->isChecked () ? Add : 0);
+  actions = actions | (removeCheck_->isChecked () ? Remove : 0);
+  actions = actions | (resolveheck_->isChecked () ? Resolve : 0);
+  actions = actions | (renameCheck_->isChecked () ? Rename : 0);
+  settings.organizeActions = Action (actions);
 }
 
 
@@ -121,6 +162,8 @@ void IncludesOptionsPage::load ()
   qsettings.beginGroup (SETTINGS_GROUP);
   settings_.policy = Policy (qsettings.value (SETTINGS_POLICY, settings_.policy).toInt ());
   settings_.order = Order (qsettings.value (SETTINGS_ORDER, settings_.order).toInt ());
+  settings_.organizeActions = Action (qsettings.value (SETTINGS_ORGANIZE_ACTIONS,
+                                                       settings_.organizeActions).toInt ());
   qsettings.endGroup ();
 }
 
@@ -130,6 +173,7 @@ void IncludesOptionsPage::save ()
   qsettings.beginGroup (SETTINGS_GROUP);
   qsettings.setValue (SETTINGS_POLICY, int (settings_.policy));
   qsettings.setValue (SETTINGS_ORDER, settings_.order);
+  qsettings.setValue (SETTINGS_ORGANIZE_ACTIONS, settings_.organizeActions);
   qsettings.endGroup ();
 }
 

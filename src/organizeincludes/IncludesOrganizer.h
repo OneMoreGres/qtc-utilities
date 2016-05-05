@@ -21,10 +21,15 @@ class IncludesOrganizer : public QObject
 
   public slots:
     void organize ();
+    void sort ();
+    void add ();
+    void remove ();
+    void resolve ();
+    void rename ();
 
   private:
     void registerActions ();
-    void organize (int actions) const;
+    void applyActions (int actions) const;
 
     QPointer <IncludesOptionsPage> options_;
 };

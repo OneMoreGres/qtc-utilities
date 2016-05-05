@@ -177,20 +177,55 @@ IncludesOrganizer::IncludesOrganizer (ExtensionSystem::IPlugin *plugin) :
 void IncludesOrganizer::registerActions ()
 {
   auto menu = ActionManager::createMenu (MENU_ID);
-  menu->menu ()->setTitle (tr ("OrganizeIncludes"));
+  menu->menu ()->setTitle (tr ("Includes"));
   ActionManager::actionContainer (Core::Constants::M_TOOLS)->addMenu (menu);
 
   {
     auto action = new QAction (tr ("Organize includes"), this);
-    connect (action, SIGNAL (triggered ()), this, SLOT (organize ()));
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::organize);
     auto command = ActionManager::registerAction (action, ACTION_ORGANIZE_INCLUDES);
-    command->setDefaultKeySequence (QKeySequence (tr ("Ctrl+Shift+A")));
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+O")));
+    menu->addAction (command);
+  }
+  {
+    auto action = new QAction (tr ("Sort includes"), this);
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::sort);
+    auto command = ActionManager::registerAction (action, ACTION_SORT_INCLUDES);
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+S")));
+    menu->addAction (command);
+  }
+  {
+    auto action = new QAction (tr ("Add missing includes"), this);
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::add);
+    auto command = ActionManager::registerAction (action, ACTION_ADD_INCLUDES);
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+M")));
+    menu->addAction (command);
+  }
+  {
+    auto action = new QAction (tr ("Remove unused includes"), this);
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::remove);
+    auto command = ActionManager::registerAction (action, ACTION_REMOVE_INCLUDES);
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+U")));
+    menu->addAction (command);
+  }
+  {
+    auto action = new QAction (tr ("Resolve includes"), this);
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::resolve);
+    auto command = ActionManager::registerAction (action, ACTION_RESOLVE_INCLUDES);
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+R")));
+    menu->addAction (command);
+  }
+  {
+    auto action = new QAction (tr ("Rename includes"), this);
+    connect (action, &QAction::triggered, this, &IncludesOrganizer::rename);
+    auto command = ActionManager::registerAction (action, ACTION_RENAME_INCLUDES);
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+N")));
     menu->addAction (command);
   }
 }
 
 
-void IncludesOrganizer::organize (int actions) const
+void IncludesOrganizer::applyActions (int actions) const
 {
   Document document (EditorManager::currentDocument ());
   if (!options_ || !document.isValid ()) {
@@ -206,7 +241,7 @@ void IncludesOrganizer::organize (int actions) const
   Includes includes = document.includes ();
   qDebug () << "doc includes" << includes;
 
-  if (actions | Resolve) {
+  if (actions & Resolve) {
     resolveIncludes (includes, document);
     qDebug () << "resolved includes" << includes;
   }
@@ -219,7 +254,7 @@ void IncludesOrganizer::organize (int actions) const
   map.organize (settings.policy);
   qDebug () << "left includers/includes" << map.includers () << map.includes ();
 
-  if (actions | Remove) {
+  if (actions & Remove) {
     auto unused = map.includers ();
     for (const auto &i: unused) {
       includes.removeAll (i);
@@ -227,7 +262,7 @@ void IncludesOrganizer::organize (int actions) const
     }
   }
 
-  if (actions | Add) {
+  if (actions & Add) {
     auto added = map.includes ();
     for (auto &i: added) {
       updateInclude (i, document);
@@ -236,7 +271,7 @@ void IncludesOrganizer::organize (int actions) const
     }
   }
 
-  if (actions | Rename) {
+  if (actions & Rename) {
     for (auto &i: includes) {
       if (updateInclude (i, document)) {
         document.replaceInclude (i);
@@ -244,7 +279,7 @@ void IncludesOrganizer::organize (int actions) const
     }
   }
 
-  if (actions | Sort) {
+  if (actions & Sort) {
     sortIncludes (includes, settings.order, document);
     document.reorderIncludes (includes);
   }
@@ -253,7 +288,32 @@ void IncludesOrganizer::organize (int actions) const
 
 void IncludesOrganizer::organize ()
 {
-  organize (AllActions);
+  applyActions (options_->settings ().organizeActions);
+}
+
+void IncludesOrganizer::sort ()
+{
+  applyActions (Sort);
+}
+
+void IncludesOrganizer::add ()
+{
+  applyActions (Add);
+}
+
+void IncludesOrganizer::remove ()
+{
+  applyActions (Remove);
+}
+
+void IncludesOrganizer::resolve ()
+{
+  applyActions (Resolve);
+}
+
+void IncludesOrganizer::rename ()
+{
+  applyActions (Rename);
 }
 
 } // namespace OrganizeIncludes

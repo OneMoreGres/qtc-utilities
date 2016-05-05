@@ -28,6 +28,7 @@ struct Settings
 {
   Policy policy {MinimalEntries};
   Order order {SpecificFirst};
+  Action organizeActions {AllActions};
 };
 
 } // namespace OrganizeIncludes
