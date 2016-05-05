@@ -22,6 +22,19 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
+void renamePrivateInclude (Include &include)
+{
+  if (include.file.contains (QDir::separator () + QLatin1String ("Qt"))) {
+    QFileInfo info (include.file);
+    auto dir = info.absoluteDir ();
+    auto files = dir.entryList (QStringList () << info.baseName (), QDir::Files);
+    if (files.size () == 1) {
+      include.file = dir.absoluteFilePath (files.first ());
+    }
+  }
+}
+
+
 
 bool updateInclude (Include &i, const Document &document)
 {
@@ -246,6 +259,9 @@ void IncludesOrganizer::applyActions (int actions) const
 
   Includes usedIncludes = IncludesExtractor (document) ();
   qDebug () << "usedIncludes" << usedIncludes;
+
+  std::for_each (includes.begin (), includes.end (), &renamePrivateInclude);
+  std::for_each (usedIncludes.begin (), usedIncludes.end (), &renamePrivateInclude);
 
   const auto &settings = options_->settings ();
   IncludeMap map (document.snapshot (), includes, usedIncludes);
