@@ -21,7 +21,7 @@ namespace Internal {
 namespace OrganizeIncludes {
 
 Document::Document (Core::IDocument *idocument)
-  : idocument_ (idocument)
+  : idocument_ (idocument), textDocument_ (nullptr)
 {
   if (!idocument_) {
     return;
@@ -35,74 +35,63 @@ Document::Document (Core::IDocument *idocument)
     return;
   }
   cppDocument_->check ();
+
+  auto editor = qobject_cast<TextEditor::BaseTextEditor *>(
+    Core::EditorManager::activateEditorForDocument (idocument_));
+  if (editor) {
+    textDocument_ = editor->textDocument ()->document ();
+  }
+
+  auto parts = model->projectPart (cppDocument_->fileName ());
+  for (const auto &part: parts) {
+    for (const auto &path: part->headerPaths) {
+      includePaths_ << path.path;
+      if (projectPath_.isEmpty ()) {
+        projectPath_ = QFileInfo (part->projectFile).absolutePath ();
+      }
+    }
+  }
+
+  auto all = cppDocument_->resolvedIncludes () + cppDocument_->unresolvedIncludes ();
+  std::transform (all.cbegin (), all.cend (), std::back_inserter (includeLines_),
+                  [] (const CPlusPlus::Document::Include &i) -> int {
+          return Include (i).isMoc () ? -1 : i.line () - 1;
+        });
+  includeLines_.removeAll (-1);
 }
 
 bool Document::isValid () const
 {
-  return (idocument_ && cppDocument_);
+  return (idocument_ && cppDocument_ && textDocument_);
 }
 
 Includes Document::includes () const
 {
   Includes includes;
-  for (const auto &i: cppDocument_->resolvedIncludes ()) {
-    includes << (i);
-  }
-  for (const auto &i: cppDocument_->unresolvedIncludes ()) {
-    includes << (i);
+  auto all = cppDocument_->resolvedIncludes () + cppDocument_->unresolvedIncludes ();
+  for (const auto &i: all) {
+    auto inc = Include (i);
+    if (inc.isMoc ()) {
+      continue;
+    }
+    includes << inc;
   }
   return includes;
 }
 
-void Document::addInclude (const Include &include)
-{
-  cppDocument_->addIncludeFile (CPlusPlus::Document::Include (
-                                  include.include, include.file,
-                                  include.line, Client::IncludeLocal));
-  if (!snapshot_.contains (include.file)) {
-    QFile f (include.file);
-    if (f.open (QFile::ReadOnly)) {
-      auto resolved = snapshot_.preprocessedDocument (f.readAll (), include.file);
-      resolved->parse ();
-      resolved->check ();
-      snapshot_.insert (resolved);
-    }
-  }
-}
-
 QList<int> Document::includeLines () const
 {
-  QList<int> lines;
-  auto all = cppDocument_->resolvedIncludes () + cppDocument_->unresolvedIncludes ();
-  std::transform (all.cbegin (), all.cend (), std::back_inserter (lines),
-                  [] (const CPlusPlus::Document::Include &i) -> int {
-          return Include (i).isMoc () ? -1 : i.line () - 1;
-        });
-  lines.removeAll (-1);
-  return lines;
+  return includeLines_;
 }
 
 QList<QString> Document::includePaths () const
 {
-  QList<QString> result;
-  auto model = CppModelManager::instance ();
-  auto parts = model->projectPart (cppDocument_->fileName ());
-  for (const auto &part: parts) {
-    for (const auto &path: part->headerPaths) {
-      result << path.path;
-    }
-  }
-  return result;
+  return includePaths_;
 }
 
 QString Document::projectPath () const
 {
-  auto model = CppModelManager::instance ();
-  auto parts = model->projectPart (cppDocument_->fileName ());
-  for (const auto &part: parts) {
-    return QFileInfo (part->projectFile).absolutePath ();
-  }
-  return {};
+  return projectPath_;
 }
 
 QString Document::file () const
@@ -127,12 +116,107 @@ TranslationUnit * Document::translationUnit () const
 
 QTextDocument * Document::textDocument () const
 {
-  auto editor = qobject_cast<TextEditor::BaseTextEditor *>(
-    Core::EditorManager::activateEditorForDocument (idocument_));
-  if (editor) {
-    return editor->textDocument ()->document ();
+  return textDocument_;
+}
+
+void Document::replaceInclude (const Include &include)
+{
+  auto c = cursor (include.line, include.isAdded);
+  c.select (QTextCursor::LineUnderCursor);
+  c.removeSelectedText ();
+  c.insertText (include.directive ());
+
+  addToCppDocument (include);
+}
+
+void Document::removeInclude (const Include &include)
+{
+  auto c = cursor (include.line, include.isAdded);
+  c.select (QTextCursor::LineUnderCursor);
+  c.removeSelectedText ();
+  c.deleteChar (); // for eol
+  lineChanges_[include.line] -= 1;
+}
+
+void Document::addInclude (const Include &include)
+{
+  auto c = cursor (include.line);
+  c.insertText (include.directive () + QLatin1String ("\n"));
+  lineChanges_[include.line] += 1;
+}
+
+void Document::reorderIncludes (const Includes &includes)
+{
+  QMap<int, QString> names;
+  QSet<int> groupLines;
+  auto lastGroup = -1;
+  auto line = lineAfterFirstComment () - 1;
+  for (const auto &i: includes) {
+    names[++line] = i.directive ();
+    removeInclude (i);
+    removeNewLinesBefore (i.line, true);
+    if (i.groupIndex != lastGroup && lastGroup != -1) {
+      groupLines.insert (line);
+    }
+    lastGroup = i.groupIndex;
   }
-  return nullptr;
+
+  for (auto line: names.keys ()) {
+    auto c = cursor (line, true);
+    if (groupLines.contains (line)) {
+      c.insertText (QLatin1String ("\n"));
+      lineChanges_[line] += 1;
+    }
+    c.insertText (names[line] + QLatin1String ("\n"));
+    lineChanges_[line] += 1;
+  }
+}
+
+void Document::removeNewLinesBefore (int line, bool isNew)
+{
+  auto c = cursor (line, isNew);
+  while (true) {
+    c.movePosition (QTextCursor::Up);
+    if (c.block ().text ().isEmpty ()) {
+      c.deleteChar ();
+      lineChanges_[--line] -= 1;
+      continue;
+    }
+    break;
+  }
+}
+
+int Document::realLine (int line, bool isNew) const
+{
+  int result = line;
+  for (auto i: lineChanges_.keys ()) {
+    if (i > line || (isNew && i == line)) {
+      break;
+    }
+    result += lineChanges_[i];
+  }
+  return result;
+}
+
+QTextCursor Document::cursor (int line, bool isNew)
+{
+  return QTextCursor (textDocument_->findBlockByLineNumber (realLine (line, isNew)));
+}
+
+void Document::addToCppDocument (const Include &include)
+{
+  cppDocument_->addIncludeFile (CPlusPlus::Document::Include (
+                                  include.include, include.file,
+                                  include.line, Client::IncludeLocal));
+  if (!snapshot_.contains (include.file)) {
+    QFile f (include.file);
+    if (f.open (QFile::ReadOnly)) {
+      auto resolved = snapshot_.preprocessedDocument (f.readAll (), include.file);
+      resolved->parse ();
+      resolved->check ();
+      snapshot_.insert (resolved);
+    }
+  }
 }
 
 Scope * Document::scopeAtToken (unsigned token) const
@@ -148,11 +232,7 @@ int Document::lineAfterFirstComment () const
   // copied from includeutils.cpp
   int insertLine = -1;
 
-  auto doc = textDocument ();
-  if (!doc) {
-    return 0;
-  }
-  QTextBlock block = doc->firstBlock ();
+  QTextBlock block = textDocument_->firstBlock ();
   while (block.isValid ()) {
     const QString trimmedText = block.text ().trimmed ();
 
@@ -187,7 +267,7 @@ int Document::lineAfterFirstComment () const
     block = block.next ();
   }
 
-  return insertLine;
+  return insertLine - 1;
 }
 
 } // namespace OrganizeIncludes

@@ -19,8 +19,9 @@ enum Action {
   Add = 1 << 1,
   Remove = 1 << 2,
   Resolve = 1 << 3,
+  Rename = 1 << 4,
 
-  AllActions = Sort | Add | Remove | Resolve
+  AllActions = Sort | Add | Remove | Resolve | Rename
 };
 
 struct Settings

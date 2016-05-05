@@ -12,6 +12,8 @@
 
 #include <extensionsystem/iplugin.h>
 
+#include <cpptools/includeutils.h>
+
 #include <QMenu>
 #include <QTextBlock>
 #include <QDir>
@@ -23,34 +25,74 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
-QString resolveInclude (const QString &nameOnly, const QString &asIncluded,
-                        const QString &path)
+
+bool updateInclude (Include &i, const Document &document)
 {
-  QDir dir (path);
-  if (dir.exists (nameOnly)) {     // file path starts below include path
-    return dir.absoluteFilePath (nameOnly);
+  auto isLocal = i.file.startsWith (document.projectPath ());
+  auto changed = (i.isLocal != isLocal);
+  i.isLocal = isLocal;
+
+  if (i.line < 0) {
+    changed = true;
+    i.line = CppTools::IncludeUtils::LineForNewIncludeDirective (
+      document.textDocument (), document.cppDocument ()) (i.file) - 1;
+    i.isAdded = true;
   }
-  for (const auto &subdir: dir.entryList (QDir::Dirs | QDir::NoDotAndDotDot)) {
-    auto resolved = resolveInclude (nameOnly, asIncluded, dir.filePath (subdir));
-    if (!resolved.isEmpty ()
-        && resolved.endsWith (QDir::separator () + asIncluded)) {
-      return resolved;
-    }
+
+  if (!i.include.isEmpty ()) {
+    return changed;
   }
-  return {};
+  auto includePaths = document.includePaths ();
+  auto file = i.file;
+  auto best = std::max_element (includePaths.cbegin (), includePaths.cend (),
+                                [&file](const QString &l, const QString &r) {
+          if (!file.startsWith (l)) {
+            return true;
+          }
+          if (!file.startsWith (r)) {
+            return false;
+          }
+          return l.size () < r.size ();
+        });
+
+  i.include = file.startsWith (*best)
+              ? i.file.mid (best->size () + 1)
+              : QFileInfo (i.file).fileName ();
+  return true;
 }
 
-void resolveIncludes (Includes &includes, const QList<QString> &includePaths)
+
+
+bool resolveInclude (Include &include, const QString &path)
+{
+  auto nameOnly = QFileInfo (include.include).fileName ();
+  QDir dir (path);
+  if (dir.exists (nameOnly)) {
+    auto file = dir.absoluteFilePath (nameOnly);
+    if (file.endsWith (QDir::separator () + include.include)) {
+      include.file = file;
+      include.include.clear ();
+      return true;
+    }
+  }
+  for (const auto &subdir: dir.entryList (QDir::Dirs | QDir::NoDotAndDotDot)) {
+    if (resolveInclude (include, dir.filePath (subdir))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void resolveIncludes (Includes &includes, Document &document)
 {
   for (auto &i: includes) {
     if (!i.file.isEmpty ()) {
       continue;
     }
-    auto nameOnly = QFileInfo (i.include).fileName ();
-    for (const auto &path: includePaths) {
-      i.file = resolveInclude (nameOnly, i.include, path);
-      if (!i.file.isEmpty ()) {
-        i.isJustResolved = true;
+    for (const auto &path: document.includePaths ()) {
+      if (resolveInclude (i, path)) {
+        updateInclude (i, document);
+        document.replaceInclude (i);
         break;
       }
     }
@@ -59,38 +101,9 @@ void resolveIncludes (Includes &includes, const QList<QString> &includePaths)
 
 
 
-
-void renameIncludes (Includes &includes, const QList<QString> &includePaths,
-                     const QString &projectPath)
+void sortIncludes (Includes &includes, Order order, Document &document)
 {
-  for (auto &i: includes) {
-    i.isLocal = i.file.startsWith (projectPath);
-
-    if (!(i.include.isEmpty () || i.isJustResolved)) {
-      continue;
-    }
-    auto file = i.file;
-    auto best = std::max_element (includePaths.cbegin (), includePaths.cend (),
-                                  [&file](const QString &l, const QString &r) {
-            if (!file.startsWith (l)) {
-              return true;
-            }
-            if (!file.startsWith (r)) {
-              return false;
-            }
-            return l.size () < r.size ();
-          });
-
-    i.include = file.startsWith (*best)
-                ? i.file.mid (best->size () + 1)
-                : QFileInfo (i.file).fileName ();
-  }
-}
-
-
-
-void sortIncludes (Includes &includes, Order order, const QString &projectPath)
-{
+  auto projectPath = document.projectPath ();
 #ifdef Q_OS_LINUX
   QString systemPath = QStringLiteral ("/usr/");
 #else
@@ -135,50 +148,23 @@ void sortIncludes (Includes &includes, Order order, const QString &projectPath)
       qCritical () << "Unhandled sort switch";
       break;
   }
-}
 
-
-
-void writeIncludes (Document &document, const Includes &includes)
-{
-  auto textDocument = document.textDocument ();
-  auto oldLines = document.includeLines ();
-  std::sort (oldLines.begin (), oldLines.end (), std::greater<int>());
-
-  std::for_each (oldLines.cbegin (), oldLines.cend (), [textDocument] (int i) {
-          QTextCursor c (textDocument->findBlockByLineNumber (i));
-          c.select (QTextCursor::BlockUnderCursor);
-          c.removeSelectedText ();
-        });
-
-  if (includes.isEmpty ()) {
+  if (order == Alphabetical || order == KeepCurrent) {
     return;
   }
 
-  QString text;
   QString last;
-  std::for_each (includes.cbegin (), includes.cend (),
-                 [&text, &last] (const Include &i) {
-          if (i.isMoc ()) {
-            return;
-          }
-          if (!last.isEmpty ()) {
-            auto lastPath = QFileInfo (last).absolutePath ();
-            auto path = QFileInfo (i.file).absolutePath ();
-            if (!path.startsWith (lastPath) && !lastPath.startsWith (path)) {
-              text += QStringLiteral ("\n");
-            }
-          }
-          last = i.file;
-          text += i.directive ();
-        });
-
-  QTextCursor c (textDocument);
-  int linesToMove = document.lineAfterFirstComment () - 1;
-  if (linesToMove > 0) {
-    c.movePosition (QTextCursor::Down, QTextCursor::MoveAnchor, linesToMove);
+  auto groupIndex = 0;
+  for (auto &i: includes) {
+    if (!last.isEmpty ()) {
+      auto lastPath = QFileInfo (last).absolutePath ();
+      auto path = QFileInfo (i.file).absolutePath ();
+      if (!path.startsWith (lastPath) && !lastPath.startsWith (path)) {
+        i.groupIndex = ++groupIndex;
+      }
+    }
+    last = i.file;
   }
-  c.insertText (text);
 }
 
 
@@ -225,13 +211,8 @@ void IncludesOrganizer::organize (int actions) const
   qDebug () << "doc includes" << includes;
 
   if (actions | Resolve) {
-    resolveIncludes (includes, includePaths);
+    resolveIncludes (includes, document);
     qDebug () << "resolved includes" << includes;
-    for (const auto &i: includes) {
-      if (i.isJustResolved) {
-        document.addInclude (i);
-      }
-    }
   }
 
   Includes usedIncludes = IncludesExtractor (document) ();
@@ -240,28 +221,37 @@ void IncludesOrganizer::organize (int actions) const
   const auto &settings = options_->settings ();
   IncludeMap map (document.snapshot (), includes, usedIncludes);
   map.organize (settings.policy);
-  qDebug () << "left includers/includes" <<  map.includers () << map.includes ();
+  qDebug () << "left includers/includes" << map.includers () << map.includes ();
 
   if (actions | Remove) {
     auto unused = map.includers ();
     for (const auto &i: unused) {
       includes.removeAll (i);
+      document.removeInclude (i);
     }
   }
 
   if (actions | Add) {
     auto added = map.includes ();
-    includes += added;
+    for (auto &i: added) {
+      updateInclude (i, document);
+      document.addInclude (i);
+      includes << i;
+    }
   }
 
-  auto projectPath = document.projectPath ();
-  renameIncludes (includes, includePaths, projectPath);
+  if (actions | Rename) {
+    for (auto &i: includes) {
+      if (updateInclude (i, document)) {
+        document.replaceInclude (i);
+      }
+    }
+  }
 
   if (actions | Sort) {
-    sortIncludes (includes, settings.order, projectPath);
+    sortIncludes (includes, settings.order, document);
+    document.reorderIncludes (includes);
   }
-
-  writeIncludes (document, includes);
 }
 
 

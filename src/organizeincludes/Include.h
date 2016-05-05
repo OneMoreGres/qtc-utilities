@@ -11,7 +11,7 @@ namespace OrganizeIncludes {
 struct Include
 {
   Include (const CPlusPlus::Document::Include &source);
-  Include (const QString &file = {}, const QString &include = {}, int line = 0,
+  Include (const QString &file = {}, const QString &include = {}, int line = -1,
            bool isLocal = false);
 
   QString directive () const;
@@ -20,8 +20,9 @@ struct Include
   QString file;
   QString include;
   int line;
+  int groupIndex;
   bool isLocal;
-  bool isJustResolved;
+  bool isAdded;
 };
 
 inline bool operator== (const Include &lhs, const Include &rhs)
