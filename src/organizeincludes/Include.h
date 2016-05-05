@@ -10,7 +10,7 @@ namespace OrganizeIncludes {
 
 struct Include
 {
-  Include (const CPlusPlus::Document::Include &source);
+  explicit Include (const CPlusPlus::Document::Include &source);
   Include (const QString &file = {}, const QString &include = {}, int line = -1,
            bool isLocal = false);
 

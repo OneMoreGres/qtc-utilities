@@ -2,6 +2,7 @@
 
 #include <cpptools/cppmodelmanager.h>
 #include <cpptools/projectpart.h>
+#include <cpptools/includeutils.h>
 
 #include <coreplugin/editormanager/editormanager.h>
 
@@ -51,13 +52,6 @@ Document::Document (Core::IDocument *idocument)
       }
     }
   }
-
-  auto all = cppDocument_->resolvedIncludes () + cppDocument_->unresolvedIncludes ();
-  std::transform (all.cbegin (), all.cend (), std::back_inserter (includeLines_),
-                  [] (const CPlusPlus::Document::Include &i) -> int {
-          return Include (i).isMoc () ? -1 : i.line () - 1;
-        });
-  includeLines_.removeAll (-1);
 }
 
 bool Document::isValid () const
@@ -70,21 +64,16 @@ Includes Document::includes () const
   Includes includes;
   auto all = cppDocument_->resolvedIncludes () + cppDocument_->unresolvedIncludes ();
   for (const auto &i: all) {
-    auto inc = Include (i);
-    if (inc.isMoc ()) {
+    auto include = Include (i);
+    if (include.isMoc ()) {
       continue;
     }
-    includes << inc;
+    includes << include;
   }
   return includes;
 }
 
-QList<int> Document::includeLines () const
-{
-  return includeLines_;
-}
-
-QList<QString> Document::includePaths () const
+QStringList Document::includePaths () const
 {
   return includePaths_;
 }
@@ -114,9 +103,10 @@ TranslationUnit * Document::translationUnit () const
   return cppDocument_->translationUnit ();
 }
 
-QTextDocument * Document::textDocument () const
+int Document::lineForInclude (const Include &include) const
 {
-  return textDocument_;
+  return IncludeUtils::LineForNewIncludeDirective (textDocument_,
+                                                   cppDocument_) (include.file) - 1;
 }
 
 void Document::replaceInclude (const Include &include)

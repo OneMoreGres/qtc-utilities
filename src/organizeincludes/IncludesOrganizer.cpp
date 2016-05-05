@@ -12,10 +12,7 @@
 
 #include <extensionsystem/iplugin.h>
 
-#include <cpptools/includeutils.h>
-
 #include <QMenu>
-#include <QTextBlock>
 #include <QDir>
 
 using namespace Core;
@@ -34,8 +31,7 @@ bool updateInclude (Include &i, const Document &document)
 
   if (i.line < 0) {
     changed = true;
-    i.line = CppTools::IncludeUtils::LineForNewIncludeDirective (
-      document.textDocument (), document.cppDocument ()) (i.file) - 1;
+    i.line = document.lineForInclude (i);
     i.isAdded = true;
   }
 
