@@ -152,14 +152,12 @@ void sortIncludes (Includes &includes, Order order, Document &document)
   QString last;
   auto groupIndex = 0;
   for (auto &i: includes) {
-    if (!last.isEmpty ()) {
-      auto lastPath = QFileInfo (last).absolutePath ();
-      auto path = QFileInfo (i.file).absolutePath ();
-      if (!path.startsWith (lastPath) && !lastPath.startsWith (path)) {
-        i.groupIndex = ++groupIndex;
-      }
+    auto path = QFileInfo (i.file).absolutePath ();
+    if (!last.startsWith (path) && !path.startsWith (last) && !last.isEmpty ()) {
+      ++groupIndex;
     }
-    last = i.file;
+    i.groupIndex = groupIndex;
+    last = path;
   }
 }
 
