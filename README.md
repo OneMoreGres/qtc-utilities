@@ -15,3 +15,7 @@ Makes additional application output pane that contains dock widgets instead of t
 So now it is possible to see several apps' output an once.
 
 ![Preview](dist/dockedoutput.png?raw=true)
+
+## Organize includes
+
+Removes unused, adds absent, resolves misplaced and sorts includes in current document.
