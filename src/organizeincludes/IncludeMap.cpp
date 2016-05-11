@@ -115,13 +115,22 @@ Includes IncludeMap::includersOf (const Include &file) const
 
 void IncludeMap::removeIncluder (const Include &file)
 {
+  auto keys = includers_.keys (includers_.value (file)); // for duplicates detection
   for (const auto &i: includers_.value (file)) {
     for (const auto &ii: includes_[i]) {
       includers_[ii].removeAll (i);
     }
     includes_.remove (i);
   }
-  includers_.remove (file);
+
+  if (includers_.remove (file) == 0) {
+    return;
+  }
+  // keep duplicate includes except currently deleted
+  keys.removeOne (file);
+  for (const auto &i: keys) {
+    includers_.insertMulti (i, {});
+  }
 }
 
 

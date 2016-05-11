@@ -296,7 +296,13 @@ void IncludesOrganizer::applyActions (int actions) const
   if (actions & Remove) {
     auto unused = map.includers ();
     for (const auto &i: unused) {
-      includes.removeAll (i);
+      for (auto pos = includes.size () - 1; pos >= 0; --pos) {
+        if (!includes[pos].exactMatch (i)) {
+          continue;
+        }
+        includes.removeAt (pos);
+        break;
+      }
       document.removeInclude (i);
     }
   }

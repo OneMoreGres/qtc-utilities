@@ -151,6 +151,7 @@ void Document::reorderIncludes (const Includes &includes)
     lastGroup = i.groupIndex;
   }
 
+  lineChanges_.clear ();
   for (auto line: names.keys ()) {
     auto c = cursor (line, true);
     if (groupLines.contains (line)) {
@@ -158,7 +159,6 @@ void Document::reorderIncludes (const Includes &includes)
       lineChanges_[line] += 1;
     }
     c.insertText (names[line] + QLatin1String ("\n"));
-    lineChanges_[line] += 1;
   }
 }
 

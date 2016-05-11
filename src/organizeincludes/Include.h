@@ -16,6 +16,7 @@ struct Include
 
   QString directive () const;
   bool isMoc () const;
+  bool exactMatch (const Include &rhs) const;
 
   QString file;
   QString include;

@@ -31,6 +31,16 @@ bool Include::isMoc () const
               && include.endsWith (QStringLiteral (".cpp"))));
 }
 
+bool Include::exactMatch (const Include &rhs) const
+{
+  return file == rhs.file
+         && include == rhs.include
+         && line == rhs.line
+         && groupIndex == rhs.groupIndex
+         && isLocal == rhs.isLocal
+         && isAdded == rhs.isAdded;
+}
+
 } // namespace OrganizeIncludes
 } // namespace Internal
 } // namespace QtcUtilities
