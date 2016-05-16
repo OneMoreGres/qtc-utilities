@@ -363,6 +363,6 @@ void IncludesOrganizer::rename ()
 
 } // namespace OrganizeIncludes
 } // namespace Internal
-} // namespace QtcCodeUtils
+} // namespace QtcUtilities
 
 //#include "IncludesOrganizer.moc"
