@@ -25,6 +25,9 @@ const QString SETTINGS_ARGUMENTS = QLatin1String ("arguments");
 const QString SETTINGS_EXTENSIONS = QLatin1String ("extensions");
 const QString SETTINGS_CHECKTYPES = QLatin1String ("checkTypes");
 
+const QString NAME_TIDY = QLatin1String ("Tidy");
+const QString NAME_MODULARIZE = QLatin1String ("Modularize");
+
 class ToolOptionsWidget : public QWidget
 {
   Q_OBJECT
@@ -88,6 +91,8 @@ ToolOptionsWidget::ToolOptionsWidget (Core::VariableChooser *variableChooser) :
 
   setLayout (layout);
 
+
+  extensions_->setToolTip (tr ("Comma separated. May be empty."));
 
   variableChooser->addSupportedWidget (arguments_);
   connect (browseBinary_, &QPushButton::clicked, this, &ToolOptionsWidget::browseBinary);
@@ -228,7 +233,8 @@ void ToolOptionsPage::load ()
 {
   auto &qsettings = *(Core::ICore::settings ());
   auto loadTool =
-    [&qsettings] (ToolRunnerSettings &s, const QString &tool) {
+    [&qsettings] (const QString &tool) -> ToolRunnerSettings {
+      ToolRunnerSettings s;
       qsettings.beginGroup (tool);
       s.name = qsettings.value (SETTINGS_NAME, tool).toString ();
       s.binary = qsettings.value (SETTINGS_BINARY).toString ();
@@ -240,13 +246,13 @@ void ToolOptionsPage::load ()
         s.checkTypes << type.toInt ();
       }
       qsettings.endGroup ();
+      return s;
     };
 
   settings_.clear ();
-  settings_ << ToolRunnerSettings () << ToolRunnerSettings ();
   qsettings.beginGroup (SETTINGS_GROUP);
-  loadTool (settings_[0], QLatin1String ("Tidy"));
-  loadTool (settings_[1], QLatin1String ("Modularize"));
+  settings_ << loadTool (NAME_TIDY);
+  settings_ << loadTool (NAME_MODULARIZE);
   qsettings.endGroup ();
 }
 
@@ -254,8 +260,8 @@ void ToolOptionsPage::save ()
 {
   auto &qsettings = *(Core::ICore::settings ());
   auto saveTool =
-    [&qsettings] (ToolRunnerSettings &s, const QString &tool) {
-      qsettings.beginGroup (tool);
+    [&qsettings] (const ToolRunnerSettings &s) {
+      qsettings.beginGroup (s.name);
       qsettings.setValue (SETTINGS_NAME, s.name);
       qsettings.setValue (SETTINGS_BINARY, s.binary);
       qsettings.setValue (SETTINGS_ARGUMENTS, s.arguments);
@@ -269,8 +275,9 @@ void ToolOptionsPage::save ()
     };
 
   qsettings.beginGroup (SETTINGS_GROUP);
-  saveTool (settings_[0], QLatin1String ("Tidy"));
-  saveTool (settings_[1], QLatin1String ("Modularize"));
+  for (const auto &i: settings_) {
+    saveTool (i);
+  }
   qsettings.endGroup ();
 }
 
