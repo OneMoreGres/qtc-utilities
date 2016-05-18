@@ -20,19 +20,26 @@ void ToolOutputParser::setCheckingFiles (const QStringList &files)
   clearTasks (files);
 }
 
-void ToolOutputParser::parseStandardError (const QByteArray & /*data*/)
+void ToolOutputParser::parseStandardError (const QByteArray &data)
 {
+  parseOutput (data);
 }
 
 void ToolOutputParser::parseStandardOutput (const QByteArray &data)
 {
+  parseOutput (data);
+}
+
+void ToolOutputParser::parseOutput (const QByteArray &data)
+{
   enum {
     Full, File, Line, Column, Type, Message
   };
-  QRegularExpression re (QLatin1String (R"((.+):(\d+):(\d+): (\w+):(.+))"));
+  QRegularExpression re (QLatin1String (R"((.+):(\d+):(\d+): ([\w\s]+):(.+))"));
   QMap<QString, Task::TaskType> types;
   types.insert (QLatin1String ("warning"), Task::Warning);
   types.insert (QLatin1String ("error"), Task::Error);
+  types.insert (QLatin1String ("fatal error"), Task::Error);
 
   auto lines = data.split ('\n');
   for (const auto &rawLine: lines) {

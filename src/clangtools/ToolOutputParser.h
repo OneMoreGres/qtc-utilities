@@ -23,6 +23,7 @@ class ToolOutputParser : public QObject
 
   private:
     void clearTasks (const QStringList &files);
+    void parseOutput (const QByteArray &data);
 
     using TaskIds = QSet<unsigned>;
     using TaskIdsPerFile = QMap<QString, TaskIds>;
