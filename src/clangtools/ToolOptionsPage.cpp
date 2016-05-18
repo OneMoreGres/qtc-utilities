@@ -26,7 +26,6 @@ const QString SETTINGS_EXTENSIONS = QLatin1String ("extensions");
 const QString SETTINGS_CHECKTYPES = QLatin1String ("checkTypes");
 
 const QString NAME_TIDY = QLatin1String ("Tidy");
-const QString NAME_MODULARIZE = QLatin1String ("Modularize");
 const QString NAME_CHECK = QLatin1String ("Check");
 
 class ToolOptionsWidget : public QWidget
@@ -257,7 +256,6 @@ void ToolOptionsPage::load ()
   settings_.clear ();
   qsettings.beginGroup (SETTINGS_GROUP);
   settings_ << loadTool (NAME_TIDY);
-  settings_ << loadTool (NAME_MODULARIZE);
   settings_ << loadTool (NAME_CHECK);
   qsettings.endGroup ();
 }
