@@ -27,6 +27,7 @@ const QString SETTINGS_CHECKTYPES = QLatin1String ("checkTypes");
 
 const QString NAME_TIDY = QLatin1String ("Tidy");
 const QString NAME_MODULARIZE = QLatin1String ("Modularize");
+const QString NAME_CHECK = QLatin1String ("Check");
 
 class ToolOptionsWidget : public QWidget
 {
@@ -238,7 +239,11 @@ void ToolOptionsPage::load ()
       qsettings.beginGroup (tool);
       s.name = qsettings.value (SETTINGS_NAME, tool).toString ();
       s.binary = qsettings.value (SETTINGS_BINARY).toString ();
-      auto defaultArgs = QLatin1String ("-p %{CurrentProject:BuildPath}/compile_commands.json");
+      auto defaultCompileDatabase = QLatin1String ("%{CurrentProject:BuildPath}/compile_commands.json");
+      QString defaultArgs = QLatin1String ("-p ") + defaultCompileDatabase;
+      if (s.name == NAME_CHECK) {
+        defaultArgs += QStringLiteral ("-analyze -extra-arg -Xclang -extra-arg -analyzer-output=text");
+      }
       s.arguments = qsettings.value (SETTINGS_ARGUMENTS, defaultArgs).toString ();
       s.extensions = qsettings.value (SETTINGS_EXTENSIONS).toString ().split (QLatin1String (","));
       auto types = qsettings.value (SETTINGS_CHECKTYPES).toString ().split (QLatin1String (","));
@@ -253,6 +258,7 @@ void ToolOptionsPage::load ()
   qsettings.beginGroup (SETTINGS_GROUP);
   settings_ << loadTool (NAME_TIDY);
   settings_ << loadTool (NAME_MODULARIZE);
+  settings_ << loadTool (NAME_CHECK);
   qsettings.endGroup ();
 }
 
