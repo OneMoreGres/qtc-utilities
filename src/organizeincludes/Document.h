@@ -43,6 +43,7 @@ class Document
     void addToCppDocument (const Include &include);
     QTextCursor cursor (int line, bool isNew = false);
     int lineAfterFirstComment () const;
+    void unfoldDocument ();
 
     Core::IDocument *idocument_;
     CPlusPlus::Document::Ptr cppDocument_;

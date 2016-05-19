@@ -8,6 +8,7 @@
 
 #include <texteditor/texteditor.h>
 #include <texteditor/textdocument.h>
+#include <texteditor/textdocumentlayout.h>
 
 #include <utils/qtcassert.h>
 
@@ -52,6 +53,8 @@ Document::Document (Core::IDocument *idocument)
       }
     }
   }
+
+  unfoldDocument ();
 }
 
 bool Document::isValid () const
@@ -258,6 +261,16 @@ int Document::lineAfterFirstComment () const
   }
 
   return insertLine - 1;
+}
+
+void Document::unfoldDocument ()
+{
+  for (auto i = 0, end = textDocument_->blockCount (); i < end; ++i) {
+    auto block = textDocument_->findBlockByNumber (i);
+    if (TextEditor::TextDocumentLayout::isFolded (block)) {
+      TextEditor::TextDocumentLayout::doFoldOrUnfold (block, true);
+    }
+  }
 }
 
 } // namespace OrganizeIncludes
