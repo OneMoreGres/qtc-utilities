@@ -146,8 +146,8 @@ void Document::reorderIncludes (const Includes &includes)
   auto line = lineAfterFirstComment () - 1;
   for (const auto &i: includes) {
     names[++line] = i.directive ();
+    removeNewLinesBefore (i.line, i.isAdded);
     removeInclude (i);
-    removeNewLinesBefore (i.line, true);
     if (i.groupIndex != lastGroup && lastGroup != -1) {
       groupLines.insert (line);
     }
@@ -156,7 +156,7 @@ void Document::reorderIncludes (const Includes &includes)
 
   lineChanges_.clear ();
   for (auto line: names.keys ()) {
-    auto c = cursor (line, true);
+    auto c = cursor (line, false);
     if (groupLines.contains (line)) {
       c.insertText (QLatin1String ("\n"));
       lineChanges_[line] += 1;
@@ -223,7 +223,7 @@ Scope * Document::scopeAtToken (unsigned token) const
 int Document::lineAfterFirstComment () const
 {
   // copied from includeutils.cpp
-  int insertLine = -1;
+  int insertLine = 1;
 
   QTextBlock block = textDocument_->firstBlock ();
   while (block.isValid ()) {
