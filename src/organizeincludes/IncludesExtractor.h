@@ -17,17 +17,24 @@ class Document;
 class IncludesExtractor : public CPlusPlus::ASTVisitor
 {
   public:
-    explicit IncludesExtractor (const Document &document);
+    explicit IncludesExtractor (const Document &document, bool useLocator);
 
     Includes operator () ();
 
     bool visit (CPlusPlus::NamedTypeSpecifierAST *) override;
-    bool visit (CPlusPlus::IdExpressionAST *) override;
+    bool visit (CPlusPlus::DeclaratorIdAST *) override;
+    bool visit (CPlusPlus::CallAST *) override;
 
   private:
     void addUsage (const QString &file);
     QString fileNameViaLocator (const QString &name, int types);
     Core::ILocatorFilter * getLocatorFilter () const;
+    bool addType (const QString &typeName, CPlusPlus::Scope *scope);
+    void addViaLocator (const QString &name, int types);
+    bool addTypedItems (const QList<CPlusPlus::LookupItem> &items,
+                        const QString &name, CPlusPlus::Scope *scope);
+
+    void handle (CPlusPlus::ExpressionAST *ast, CPlusPlus::Scope *scope);
 
   private:
     CPlusPlus::TypeOfExpression expressionType_;

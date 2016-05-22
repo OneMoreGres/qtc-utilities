@@ -75,3 +75,5 @@ include($$QTCREATOR_SOURCES/src/qtcreatorplugin.pri)
 
 RESOURCES += \
     resources.qrc
+
+CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT

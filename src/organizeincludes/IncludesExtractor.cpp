@@ -11,9 +11,9 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
-IncludesExtractor::IncludesExtractor (const Document &document)
+IncludesExtractor::IncludesExtractor (const Document &document, bool useLocator)
   : ASTVisitor (document.translationUnit ()),
-  document_ (document), locatorFilter_ (getLocatorFilter ())
+  document_ (document), locatorFilter_ (useLocator ? getLocatorFilter () : nullptr)
 {
   expressionType_.init (document.cppDocument (), document.snapshot ());
 }
@@ -76,52 +76,114 @@ QString IncludesExtractor::fileNameViaLocator (const QString &name, int types)
 }
 
 
-bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
+bool IncludesExtractor::addType (const QString &typeName, Scope *scope)
 {
-  auto scope = document_.scopeAtToken (ast->firstToken ());
-  auto typeName = overview_ (ast->name->name);
+  auto added = false;
   auto matches = expressionType_ (typeName.toUtf8 (), scope);
   for (const auto &i: matches) {
     if (const auto declaration = i.declaration ()) {
-      if (i.declaration ()->isForwardClassDeclaration ()) {  // check if symbol is reference
+      if (declaration->isForwardClassDeclaration ()) {
         continue;
       }
       auto fileName = QString::fromUtf8 (declaration->fileName ());
       addUsage (fileName);
-      qDebug () <<  " found" << typeName << "at" << fileName;
-      return true;
+      added = true;
+      qDebug () <<  " found type" << typeName << "at" << fileName;
+      if (declaration->isTemplate ()) {
+        break;
+      }
     }
   }
+  return added;
+}
 
-  auto fileName = fileNameViaLocator (typeName, IndexItem::Enum | IndexItem::Class);
+
+void IncludesExtractor::addViaLocator (const QString &name, int types)
+{
+  auto fileName = fileNameViaLocator (name, types);
   if (!fileName.isEmpty ()) {
     addUsage (fileName);
   }
-
-  return true;
 }
 
-bool IncludesExtractor::visit (IdExpressionAST *ast)
+bool IncludesExtractor::addTypedItems (const QList<LookupItem> &items,
+                                       const QString &name, Scope *scope)
 {
-  auto scope = document_.scopeAtToken (ast->firstToken ());
-  auto callName = overview_ (ast->name->name);
-  auto matches = expressionType_ (ast, document_.cppDocument (), scope);
-  for (const auto &i: matches) {
+  auto added = false;
+  for (const auto &i: items) {
     if (const auto declaration = i.declaration ()) {
+      if (declaration->isForwardClassDeclaration ()) {
+        continue;
+      }
       auto fileName = QString::fromUtf8 (declaration->fileName ());
       addUsage (fileName);
-      qDebug () <<  " found" << callName << "at" << fileName;
-      return true;
+      qDebug () <<  " found" << name << "at" << fileName;
+      auto typeName = overview_ (i.type ().type ());
+      if (!typeName.isEmpty ()) {
+        addType (typeName, scope);
+      }
+      added = true;
     }
   }
+  return added;
+}
 
-  auto fileName = fileNameViaLocator (callName, IndexItem::All);
-  if (!fileName.isEmpty ()) {
-    addUsage (fileName);
+
+bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
+{
+  auto typeName = overview_ (ast->name->name);
+  if (!typeName.isEmpty ()) {
+    auto scope = document_.scopeAtToken (ast->firstToken ());
+    if (!addType (typeName, scope)) {
+      addViaLocator (typeName, IndexItem::Enum | IndexItem::Class);
+    }
   }
-
   return true;
 }
+
+
+bool IncludesExtractor::visit (DeclaratorIdAST *ast)
+{
+  auto typeName = overview_ (ast->name->name);
+  if (!typeName.isEmpty ()) {
+    auto scope = document_.scopeAtToken (ast->firstToken ());
+    auto matches = expressionType_ (typeName.toUtf8 (), scope);
+    addTypedItems (matches, typeName, scope);
+  }
+  return true;
+}
+
+
+bool IncludesExtractor::visit (CallAST *ast)
+{
+  auto scope = document_.scopeAtToken (ast->firstToken ());
+  handle (ast->base_expression, scope);
+
+  auto e = ast->expression_list;
+  while (e) {
+    handle (e->value, scope);
+    e = e->next;
+  }
+  return true;
+}
+
+
+void IncludesExtractor::handle (ExpressionAST *ast, Scope *scope)
+{
+  QString callName;
+  if (auto e = ast->asIdExpression ()) {
+    callName = overview_ (e->name->name);
+  }
+  else if (auto e = ast->asMemberAccess ()) {
+    callName = overview_ (e->member_name->name);
+  }
+  auto matches = expressionType_ (ast, document_.cppDocument (), scope);
+  if (!addTypedItems (matches, callName, scope) && !callName.isEmpty ()
+      && !ast->asMemberAccess ()) {
+    addViaLocator (callName, IndexItem::All);
+  }
+}
+
 } // namespace OrganizeIncludes
 } // namespace Internal
 } // namespace QtcUtilities

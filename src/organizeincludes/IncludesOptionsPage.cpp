@@ -15,6 +15,7 @@ namespace OrganizeIncludes {
 const QString SETTINGS_GROUP = QLatin1String ("OrganizeIncludes");
 const QString SETTINGS_POLICY = QLatin1String ("policy");
 const QString SETTINGS_ORDER = QLatin1String ("order");
+const QString SETTINGS_USE_LOCATOR = QLatin1String ("useLocator");
 const QString SETTINGS_ORGANIZE_ACTIONS = QLatin1String ("organizeActions");
 
 
@@ -29,6 +30,7 @@ class OptionsWidget : public QWidget
   private:
     QComboBox *policyCombo_;
     QComboBox *orderCombo_;
+    QCheckBox *useLocator_;
     QCheckBox *sortCheck_;
     QCheckBox *addCheck_;
     QCheckBox *removeCheck_;
@@ -38,6 +40,7 @@ class OptionsWidget : public QWidget
 
 OptionsWidget::OptionsWidget ()
   : policyCombo_ (new QComboBox), orderCombo_ (new QComboBox),
+  useLocator_ (new QCheckBox (tr ("Use Locator to find missing symbols"))),
   sortCheck_ (new QCheckBox (tr ("Sort"))),
   addCheck_ (new QCheckBox (tr ("Add missing"))),
   removeCheck_ (new QCheckBox (tr ("Remove unused"))),
@@ -73,6 +76,9 @@ OptionsWidget::OptionsWidget ()
   layout->addWidget (orderCombo_, row, 1);
 
   ++row;
+  layout->addWidget (useLocator_, row, 0);
+
+  ++row;
   layout->addWidget (new QLabel (tr ("What 'organize' means")), row, 0, 1, 2);
 
   ++row;
@@ -96,6 +102,7 @@ void OptionsWidget::set (const Settings &settings)
 {
   policyCombo_->setCurrentIndex (settings.policy);
   orderCombo_->setCurrentIndex (settings.order);
+  useLocator_->setChecked (settings.useLocator);
   sortCheck_->setChecked (settings.organizeActions & Sort);
   addCheck_->setChecked (settings.organizeActions & Add);
   removeCheck_->setChecked (settings.organizeActions & Remove);
@@ -107,6 +114,7 @@ void OptionsWidget::get (Settings &settings) const
 {
   settings.policy = Policy (policyCombo_->currentIndex ());
   settings.order = Order (orderCombo_->currentIndex ());
+  settings.useLocator = useLocator_->isChecked ();
   auto actions = 0;
   actions = actions | (sortCheck_->isChecked () ? Sort : 0);
   actions = actions | (addCheck_->isChecked () ? Add : 0);
@@ -162,6 +170,8 @@ void IncludesOptionsPage::load ()
   qsettings.beginGroup (SETTINGS_GROUP);
   settings_.policy = Policy (qsettings.value (SETTINGS_POLICY, settings_.policy).toInt ());
   settings_.order = Order (qsettings.value (SETTINGS_ORDER, settings_.order).toInt ());
+  settings_.useLocator = qsettings.value (SETTINGS_USE_LOCATOR,
+                                          settings_.useLocator).toBool ();
   settings_.organizeActions = Action (qsettings.value (SETTINGS_ORGANIZE_ACTIONS,
                                                        settings_.organizeActions).toInt ());
   qsettings.endGroup ();
@@ -173,6 +183,7 @@ void IncludesOptionsPage::save ()
   qsettings.beginGroup (SETTINGS_GROUP);
   qsettings.setValue (SETTINGS_POLICY, int (settings_.policy));
   qsettings.setValue (SETTINGS_ORDER, settings_.order);
+  qsettings.setValue (SETTINGS_USE_LOCATOR, settings_.useLocator);
   qsettings.setValue (SETTINGS_ORGANIZE_ACTIONS, settings_.organizeActions);
   qsettings.endGroup ();
 }
