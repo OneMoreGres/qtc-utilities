@@ -154,17 +154,17 @@ void sortIncludes (Includes &includes, Order order, Document &document)
                  [&projectPath, &systemPath](const Include &l, const Include &r) {
             if (l.file.startsWith (projectPath)) {
               if (r.file.startsWith (projectPath)) {
-                return l.file > r.file;
+                return l.file < r.file;
               }
               return true;
             }
             if (l.file.startsWith (systemPath)) {
               if (r.file.startsWith (systemPath)) {
-                return l.file > r.file;
+                return l.file < r.file;
               }
               return false;
             }
-            return l.file > r.file;
+            return l.file < r.file;
           });
 
       if (order == GeneralFirst) {
