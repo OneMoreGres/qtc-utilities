@@ -3,10 +3,17 @@
 #include <cplusplus/CppDocument.h>
 
 using namespace CPlusPlus;
+using namespace Utils;
 
 namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
+
+bool isHeader (const QString &file)
+{
+  return (file.endsWith (QStringLiteral (".h"))
+          || file.endsWith (QStringLiteral (".hpp")));
+}
 
 Includes intersected (const QSet<QString> &lhs, const Includes &rhs)
 {
@@ -21,21 +28,25 @@ Includes intersected (const QSet<QString> &lhs, const Includes &rhs)
 
 
 IncludeMap::IncludeMap (const Snapshot &snapshot, const Includes &includers,
-                        const Includes &includes)
+                        const Includes &includes, Policy policy)
+  : policy_ (policy), snapshot_ (snapshot)
 {
   for (const auto &includer: includers) {
-    auto interesting = snapshot.allIncludesForDocument (includer.file);
-    interesting.insert (includer.file);
-    includers_.insertMulti (includer, intersected (interesting, includes));
+    auto dependencies = snapshot.allIncludesForDocument (includer.file);
+    dependencies.insert (includer.file);
+    includers_.insertMulti (includer, intersected (dependencies, includes));
 
     for (const auto &included: includers_[includer]) {
+      if (!includers_[includer].contains (included)) {
+        continue;
+      }
       auto &names = includes_[included];
       names <<  (includer);
     }
   }
 
   for (const auto &i: includes) {
-    if (!includes_.contains (i)) {
+    if (!includes_.contains (i) && isHeader ( (i.file))) {
       includes_.insert (i, {});
     }
   }
@@ -51,10 +62,9 @@ Includes IncludeMap::includers () const
   return includers_.keys ();
 }
 
-void IncludeMap::organize (Policy policy)
+void IncludeMap::organize ()
 {
-  //TODO do not include internal headers
-  switch (policy) {
+  switch (policy_) {
     case MinimalDepth:
       for (const auto &i: includes ()) {
         removeIncluder (i);
@@ -62,21 +72,59 @@ void IncludeMap::organize (Policy policy)
       break;
 
     case MinimalEntries:
-      for (const auto &i: exclusiveIncluders ()) {
-        removeIncluder (i);
-      }
-      while (true) {
-        auto biggest = biggestIncluder ();
-        if (biggest.file.isEmpty ()) {
-          break;
+      {
+        auto uniting = findUnitingIncludes ();
+        for (const auto &i: uniting) {
+          if (!includes_.contains (i)) {
+            includes_.insert (i, {});
+          }
         }
-        removeIncluder (biggest);
+        for (const auto &i: includes ()) {
+          removeIncluder (i);
+          if (!uniting.contains (i)) {
+            includes_.remove (i);
+          }
+        }
       }
       break;
 
     default:
       qCritical () << "Unhandled policy switch";
       break;
+  }
+}
+
+void IncludeMap::removeUsed ()
+{
+  QMap<Policy, ExtremumType> types = {{MinimalDepth, Smallest},
+                                      {MinimalEntries, Biggest}};
+  for (const auto &i: exclusiveIncluders ()) {
+    removeIncluder (i);
+  }
+  while (true) {
+    auto best = extremumEncluder (types.value (policy_, Biggest));
+    if (best.file.isEmpty ()) {
+      break;
+    }
+    removeIncluder (best);
+  }
+
+  includes_.clear ();
+}
+
+void IncludeMap::addMissing ()
+{
+  for (const auto &i: includers_.keys ()) {
+    removeIncluder (i);
+  }
+  includers_.clear ();
+
+  if (policy_ == MinimalEntries) {
+    auto uniting = findUnitingIncludes ();
+    includes_.clear ();
+    for (const auto &i: uniting) {
+      includes_.insert (i, {});
+    }
   }
 }
 
@@ -92,20 +140,22 @@ Includes IncludeMap::exclusiveIncluders () const
   return result;
 }
 
-Include IncludeMap::biggestIncluder () const
+Include IncludeMap::extremumEncluder (IncludeMap::ExtremumType type) const
 {
   auto keys = includers_.keys ();
   if (keys.isEmpty ()) {
     return {};
   }
-  auto biggest = std::max_element (keys.cbegin (), keys.cend (),
-                                   [this](const Include &l, const Include &r) {
-          return includers_[l].size () < includers_[r].size ();
+  auto best = std::max_element (keys.cbegin (), keys.cend (),
+                                [this, type](const Include &l, const Include &r) {
+          return type == Biggest
+          ? includers_[l].size () < includers_[r].size ()
+          : includers_[l].size () > includers_[r].size ();
         });
-  if (includers_[*biggest].isEmpty ()) {
+  if (includers_[*best].isEmpty ()) {
     return {};
   }
-  return *biggest;
+  return *best;
 }
 
 Includes IncludeMap::includersOf (const Include &file) const
@@ -131,6 +181,49 @@ void IncludeMap::removeIncluder (const Include &file)
   for (const auto &i: keys) {
     includers_.insertMulti (i, {});
   }
+}
+
+Includes IncludeMap::findUnitingIncludes () const
+{
+  using FileNames = QSet<FileName>;
+
+  QHash<FileName, FileNames > all;
+  FileNames uncovered;
+  for (const auto &i: includes_.keys ()) {
+    auto file = FileName::fromString (i.file);
+    all[file] << file;
+    uncovered << file;
+    for (const auto &dependant: snapshot_.filesDependingOn (file)) {
+      if (includes_.contains (dependant.toString ())) {
+        all[dependant] << file << dependant;
+      }
+    }
+  }
+
+  auto allNames = all.keys ();
+  QHash<FileName, int > weights;
+  for (const auto &i: allNames) {
+    weights[i] = snapshot_.includeLocationsOfDocument (i.toString ()).size ();
+  }
+
+  Includes uniting;
+  while (!uncovered.isEmpty ()) {
+    auto best = std::max_element (allNames.cbegin (), allNames.cend (),
+                                  [&weights, &all] (const FileName &l, const FileName &r) {
+            auto lSize = all[l].size ();
+            auto rSize = all[r].size ();
+            if (lSize == rSize) {
+              return weights[l] > weights[r]; // prefer less dependencies
+            }
+            return lSize < rSize;
+          });
+    uniting << best->toString ();
+    uncovered.subtract (all[*best]);
+    for (auto &i: all) {
+      i.intersect (uncovered);
+    }
+  }
+  return uniting;
 }
 
 

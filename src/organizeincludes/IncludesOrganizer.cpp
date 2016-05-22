@@ -1,6 +1,5 @@
 #include "IncludesOrganizer.h"
 #include "IncludesConstants.h"
-#include "Include.h"
 #include "IncludesOptionsPage.h"
 #include "IncludesExtractor.h"
 #include "IncludeMap.h"
@@ -57,6 +56,11 @@ void renamePrivateInclude (Include &include)
       }
     }
   }
+}
+
+void renamePrivateIncludes (Includes &includes)
+{
+  std::for_each (includes.begin (), includes.end (), &renamePrivateInclude);
 }
 
 
@@ -282,37 +286,47 @@ void IncludesOrganizer::applyActions (int actions) const
     qDebug () << "resolved includes" << includes;
   }
 
-  Includes usedIncludes = IncludesExtractor (document) ();
-  qDebug () << "usedIncludes" << usedIncludes;
-
-  std::for_each (includes.begin (), includes.end (), &renamePrivateInclude);
-  std::for_each (usedIncludes.begin (), usedIncludes.end (), &renamePrivateInclude);
-
   const auto &settings = options_->settings ();
-  IncludeMap map (document.snapshot (), includes, usedIncludes);
-  map.organize (settings.policy);
-  qDebug () << "left includers/includes" << map.includers () << map.includes ();
+  if (actions & Add || actions & Remove) {
+    Includes usedIncludes = IncludesExtractor (document) ();
+    qDebug () << "usedIncludes" << usedIncludes;
 
-  if (actions & Remove) {
-    auto unused = map.includers ();
-    for (const auto &i: unused) {
-      for (auto pos = includes.size () - 1; pos >= 0; --pos) {
-        if (!includes[pos].exactMatch (i)) {
-          continue;
-        }
-        includes.removeAt (pos);
-        break;
-      }
-      document.removeInclude (i);
+    IncludeMap map (document.snapshot (), includes, usedIncludes, settings.policy);
+    if (actions & Remove && actions & Add) {
+      map.organize ();
     }
-  }
+    else if (actions & Remove) {
+      map.removeUsed ();
+    }
+    else if (actions & Add) {
+      map.addMissing ();
+    }
+    qDebug () << "left includers/includes" << map.includers () << map.includes ();
 
-  if (actions & Add) {
-    auto added = map.includes ();
-    for (auto &i: added) {
-      updateInclude (i, document);
-      document.addInclude (i);
-      includes << i;
+    if (actions & Remove) {
+      auto unused = map.includers ();
+      for (const auto &i: unused) {
+        for (auto pos = includes.size () - 1; pos >= 0; --pos) {
+          if (!includes[pos].exactMatch (i)) { // for duplicates
+            continue;
+          }
+          includes.removeAt (pos);
+          break;
+        }
+        document.removeInclude (i);
+      }
+    }
+
+    renamePrivateIncludes (includes);
+
+    if (actions & Add) {
+      auto added = map.includes ();
+      for (auto &i: added) {
+        renamePrivateInclude (i);
+        updateInclude (i, document);
+        document.addInclude (i);
+        includes << i;
+      }
     }
   }
 
