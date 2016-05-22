@@ -17,7 +17,7 @@ class Document;
 class IncludesExtractor : public CPlusPlus::ASTVisitor
 {
   public:
-    explicit IncludesExtractor (const Document &document);
+    explicit IncludesExtractor (const Document &document, bool useLocator);
 
     Includes operator () ();
 

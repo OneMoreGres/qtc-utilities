@@ -11,9 +11,9 @@ namespace QtcUtilities {
 namespace Internal {
 namespace OrganizeIncludes {
 
-IncludesExtractor::IncludesExtractor (const Document &document)
+IncludesExtractor::IncludesExtractor (const Document &document, bool useLocator)
   : ASTVisitor (document.translationUnit ()),
-  document_ (document), locatorFilter_ (getLocatorFilter ())
+  document_ (document), locatorFilter_ (useLocator ? getLocatorFilter () : nullptr)
 {
   expressionType_.init (document.cppDocument (), document.snapshot ());
 }

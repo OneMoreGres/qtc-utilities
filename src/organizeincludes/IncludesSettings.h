@@ -29,6 +29,7 @@ struct Settings
   Policy policy {MinimalEntries};
   Order order {SpecificFirst};
   Action organizeActions {AllActions};
+  bool useLocator {true};
 };
 
 } // namespace OrganizeIncludes

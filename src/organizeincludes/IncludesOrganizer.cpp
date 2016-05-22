@@ -288,7 +288,7 @@ void IncludesOrganizer::applyActions (int actions) const
 
   const auto &settings = options_->settings ();
   if (actions & Add || actions & Remove) {
-    Includes usedIncludes = IncludesExtractor (document) ();
+    Includes usedIncludes = IncludesExtractor (document, settings.useLocator) ();
     qDebug () << "usedIncludes" << usedIncludes;
 
     IncludeMap map (document.snapshot (), includes, usedIncludes, settings.policy);
