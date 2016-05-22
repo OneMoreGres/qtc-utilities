@@ -34,6 +34,8 @@ class IncludesExtractor : public CPlusPlus::ASTVisitor
     bool addTypedItems (const QList<CPlusPlus::LookupItem> &items,
                         const QString &name, CPlusPlus::Scope *scope);
 
+    void handle (CPlusPlus::ExpressionAST *ast, CPlusPlus::Scope *scope);
+
   private:
     CPlusPlus::TypeOfExpression expressionType_;
     CPlusPlus::Overview overview_;

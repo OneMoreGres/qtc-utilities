@@ -150,20 +150,31 @@ bool IncludesExtractor::visit (DeclaratorIdAST *ast)
 bool IncludesExtractor::visit (CallAST *ast)
 {
   auto scope = document_.scopeAtToken (ast->firstToken ());
-  QString callName;
-  if (auto e = ast->base_expression->asIdExpression ()) {
-    callName = overview_ (e->name->name);
-  }
-  else {
-    if (auto e = ast->base_expression->asMemberAccess ()) {
-      callName = overview_ (e->member_name->name);
-    }
-  }
-  auto matches = expressionType_ (ast->base_expression, document_.cppDocument (), scope);
-  if (!addTypedItems (matches, callName, scope)) {
-    addViaLocator (callName, IndexItem::All);
+  handle (ast->base_expression, scope);
+
+  auto e = ast->expression_list;
+  while (e) {
+    handle (e->value, scope);
+    e = e->next;
   }
   return true;
+}
+
+
+void IncludesExtractor::handle (ExpressionAST *ast, Scope *scope)
+{
+  QString callName;
+  if (auto e = ast->asIdExpression ()) {
+    callName = overview_ (e->name->name);
+  }
+  else if (auto e = ast->asMemberAccess ()) {
+    callName = overview_ (e->member_name->name);
+  }
+  auto matches = expressionType_ (ast, document_.cppDocument (), scope);
+  if (!addTypedItems (matches, callName, scope) && !callName.isEmpty ()
+      && !ast->asMemberAccess ()) {
+    addViaLocator (callName, IndexItem::All);
+  }
 }
 
 } // namespace OrganizeIncludes
