@@ -89,6 +89,9 @@ bool IncludesExtractor::addType (const QString &typeName, Scope *scope)
       addUsage (fileName);
       added = true;
       qDebug () <<  " found type" << typeName << "at" << fileName;
+      if (declaration->isTemplate ()) {
+        break;
+      }
     }
   }
   return added;
