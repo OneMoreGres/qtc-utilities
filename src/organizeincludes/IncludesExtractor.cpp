@@ -128,10 +128,12 @@ bool IncludesExtractor::addTypedItems (const QList<LookupItem> &items,
 
 bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
 {
-  auto scope = document_.scopeAtToken (ast->firstToken ());
   auto typeName = overview_ (ast->name->name);
-  if (typeName.isEmpty () || !addType (typeName, scope)) {
-    addViaLocator (typeName, IndexItem::Enum | IndexItem::Class);
+  if (!typeName.isEmpty ()) {
+    auto scope = document_.scopeAtToken (ast->firstToken ());
+    if (!addType (typeName, scope)) {
+      addViaLocator (typeName, IndexItem::Enum | IndexItem::Class);
+    }
   }
   return true;
 }
@@ -139,10 +141,12 @@ bool IncludesExtractor::visit (NamedTypeSpecifierAST *ast)
 
 bool IncludesExtractor::visit (DeclaratorIdAST *ast)
 {
-  auto scope = document_.scopeAtToken (ast->firstToken ());
   auto typeName = overview_ (ast->name->name);
-  auto matches = expressionType_ (typeName.toUtf8 (), scope);
-  addTypedItems (matches, typeName, scope);
+  if (!typeName.isEmpty ()) {
+    auto scope = document_.scopeAtToken (ast->firstToken ());
+    auto matches = expressionType_ (typeName.toUtf8 (), scope);
+    addTypedItems (matches, typeName, scope);
+  }
   return true;
 }
 
