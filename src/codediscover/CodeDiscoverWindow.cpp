@@ -2,16 +2,34 @@
 
 #include <QScrollArea>
 #include <QGridLayout>
+#include <QCheckBox>
 #include <QDebug>
 
 namespace QtcUtilities {
 namespace Internal {
 namespace CodeDiscover {
 
-CodeDiscoverWindow::CodeDiscoverWindow (QWidget *parent, Qt::WindowFlags f)
+CodeDiscoverWindow::CodeDiscoverWindow (ClassFlags flags, QWidget *parent,
+                                        Qt::WindowFlags f)
   : QWidget (parent, f),
   imageLabel_ (nullptr)
 {
+  auto flagsLayout = new QVBoxLayout;
+  flagsLayout->addWidget (new QLabel (tr ("Settings")));
+#define ADD_CHECKBOX(FLAG, TITLE) flagsLayout->addWidget (flags_.insert (FLAG, new QCheckBox (tr (TITLE))).value ());
+  ADD_CHECKBOX (ShowMembers, "Show members");
+  ADD_CHECKBOX (ShowMethods, "Show methods");
+  ADD_CHECKBOX (ShowPublic, "Show public");
+  ADD_CHECKBOX (ShowProtected, "Show protected");
+  ADD_CHECKBOX (ShowPrivate, "Show private");
+  ADD_CHECKBOX (ShowBase, "Show base classes");
+  ADD_CHECKBOX (ShowDerived, "Show derived classes");
+  ADD_CHECKBOX (ShowDependencies, "Show dependencies");
+  ADD_CHECKBOX (ShowDependsDetails, "Show dependencies details");
+  ADD_CHECKBOX (ShowHierarchyDetails, "Show base and derived details");
+#undef ADD_CHECKBOX
+  flagsLayout->addStretch (1);
+
   auto layout = new QGridLayout;
 
   imageLabel_ = new QLabel;
@@ -23,15 +41,35 @@ CodeDiscoverWindow::CodeDiscoverWindow (QWidget *parent, Qt::WindowFlags f)
   auto *scrollArea = new QScrollArea;
   scrollArea->setBackgroundRole (QPalette::Dark);
   scrollArea->setWidget (imageLabel_);
-  layout->addWidget (scrollArea, row, 0);
+  layout->addLayout (flagsLayout, row, 0);
+  layout->addWidget (scrollArea, row, 1);
 
   setLayout (layout);
+
+  for (auto flag: flags_.keys ()) {
+    auto *check = flags_[flag];
+    if (flags & flag) {
+      check->setChecked (true);
+    }
+    connect (check, &QCheckBox::clicked, this, &CodeDiscoverWindow::updateFlags);
+  }
 }
 
 void CodeDiscoverWindow::setImage (const QPixmap &image)
 {
   imageLabel_->setPixmap (image);
   imageLabel_->adjustSize ();
+}
+
+void CodeDiscoverWindow::updateFlags ()
+{
+  auto flags = ShowNothing;
+  for (auto flag: flags_.keys ()) {
+    if (flags_[flag]->isChecked ()) {
+      flags = ClassFlags (flags | flag);
+    }
+  }
+  emit flagsChanged (flags);
 }
 
 } // namespace CodeDiscover

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CodeDiscoverSettings.h"
+
 #include <QPointer>
 
 namespace ExtensionSystem {
@@ -31,6 +33,7 @@ class CodeDiscover : public QObject
   private slots:
     void updateSettings ();
     void handleNewImage (const QPixmap &image);
+    void updateClassFlags (ClassFlags flags);
 
   private:
     void registerActions ();

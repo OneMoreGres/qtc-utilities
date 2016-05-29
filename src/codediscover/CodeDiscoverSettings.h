@@ -7,6 +7,7 @@ namespace Internal {
 namespace CodeDiscover {
 
 enum ClassFlags {
+  ShowNothing = 0,
   ShowMembers = 1 << 0,
   ShowMethods = 1 << 1,
   ShowPublic = 1 << 2,

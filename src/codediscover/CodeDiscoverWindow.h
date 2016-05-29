@@ -1,7 +1,13 @@
 #pragma once
 
+#include "CodeDiscoverSettings.h"
+
 #include <QLabel>
-#include <QWidget>
+#include <QMap>
+
+QT_BEGIN_NAMESPACE
+class QCheckBox;
+QT_END_NAMESPACE
 
 namespace QtcUtilities {
 namespace Internal {
@@ -12,13 +18,21 @@ class CodeDiscoverWindow : public QWidget
   Q_OBJECT
 
   public:
-    CodeDiscoverWindow (QWidget *parent = nullptr, Qt::WindowFlags f = {});
+    CodeDiscoverWindow (ClassFlags flags, QWidget *parent = nullptr,
+                        Qt::WindowFlags f = {});
+
+  signals:
+    void flagsChanged (ClassFlags flags);
 
   public slots:
     void setImage (const QPixmap &image);
 
+  private slots:
+    void updateFlags ();
+
   private:
     QLabel *imageLabel_;
+    QMap < ClassFlags, QCheckBox *> flags_;
 };
 
 } // namespace CodeDiscover

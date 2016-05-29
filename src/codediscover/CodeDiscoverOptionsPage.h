@@ -24,6 +24,9 @@ class CodeDiscoverOptionsPage : public Core::IOptionsPage
 
     const Settings &settings () const;
 
+    ClassFlags classFlags () const;
+    void setClassFlags (ClassFlags flags);
+
   signals:
     void settingsSaved ();
 
@@ -33,6 +36,7 @@ class CodeDiscoverOptionsPage : public Core::IOptionsPage
 
     QPointer<OptionsWidget> widget_;
     Settings settings_;
+    ClassFlags classFlags_;
 
     Q_DISABLE_COPY (CodeDiscoverOptionsPage)
 };

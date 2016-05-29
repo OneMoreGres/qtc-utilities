@@ -18,11 +18,7 @@ class ClassDiagramGenerator : public QObject
   public:
     explicit ClassDiagramGenerator (QObject *parent = 0);
 
-    QString generate (CPlusPlus::Symbol *symbol) const;
-
-  private:
-    ClassFlags flags_;
-
+    QString generate (CPlusPlus::Symbol *symbol, ClassFlags flags) const;
 };
 
 } // namespace CodeDiscover

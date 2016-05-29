@@ -30,7 +30,7 @@ namespace CodeDiscover {
 
 CodeDiscover::CodeDiscover (ExtensionSystem::IPlugin *plugin) :
   options_ (new CodeDiscoverOptionsPage),
-  window_ (new CodeDiscoverWindow),
+  window_ (new CodeDiscoverWindow (options_->classFlags ())),
   runner_ (new CodeDiscoverToolRunner (this)),
   classGenerator_ (new ClassDiagramGenerator (this))
 {
@@ -50,13 +50,15 @@ CodeDiscover::CodeDiscover (ExtensionSystem::IPlugin *plugin) :
 
   connect (runner_, &CodeDiscoverToolRunner::newImage,
            this, &CodeDiscover::handleNewImage);
+  connect (window_.data (), &CodeDiscoverWindow::flagsChanged,
+           this, &CodeDiscover::updateClassFlags);
   updateSettings ();
 }
 
 void CodeDiscover::showEntryClassDiagram ()
 {
   if (auto *symbol = AnalyzerUtils::findSymbolUnderCursor ()) {
-    auto source = classGenerator_->generate (symbol);
+    auto source = classGenerator_->generate (symbol, options_->classFlags ());
     if (!source.isEmpty ()) {
       runner_->convert (source);
     }
@@ -75,6 +77,12 @@ void CodeDiscover::handleNewImage (const QPixmap &image)
     window_->setImage (image);
     Core::ModeManager::activateMode ({MODE_ID});
   }
+}
+
+void CodeDiscover::updateClassFlags (ClassFlags flags)
+{
+  options_->setClassFlags (flags);
+  showEntryClassDiagram ();
 }
 
 void CodeDiscover::registerActions ()

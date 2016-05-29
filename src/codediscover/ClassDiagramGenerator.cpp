@@ -1,7 +1,6 @@
 #include "ClassDiagramGenerator.h"
 
 #include <cplusplus/Overview.h>
-#include <cplusplus/LookupContext.h>
 #include <cplusplus/TypeOfExpression.h>
 
 #include <cpptools/cppmodelmanager.h>
@@ -356,17 +355,16 @@ void Generator::processDependency (const QString &dependency, Class *dependant,
 
 
 
-ClassDiagramGenerator::ClassDiagramGenerator (QObject *parent) : QObject (parent),
-  flags_ (ShowAll)
+ClassDiagramGenerator::ClassDiagramGenerator (QObject *parent) : QObject (parent)
 {
 }
 
-QString ClassDiagramGenerator::generate (Symbol *symbol) const
+QString ClassDiagramGenerator::generate (Symbol *symbol, ClassFlags flags) const
 {
   QTC_ASSERT (symbol, {});
   QString source;
   if (isClassLike (symbol)) {
-    Generator generator (flags_);
+    Generator generator (flags);
     source = generator.operator () (symbol);
   }
   return source;

@@ -19,6 +19,7 @@ const QString SETTINGS_GROUP = QLatin1String ("CodeDiscover");
 const QString SETTINGS_JAVA = QLatin1String ("java");
 const QString SETTINGS_UML = QLatin1String ("uml");
 const QString SETTINGS_DOT = QLatin1String ("dot");
+const QString SETTINGS_CLASSFLAGS = QLatin1String ("classFlags");
 
 
 class OptionsWidget : public QWidget
@@ -111,7 +112,7 @@ void OptionsWidget::openFileDialog (QWidget *edit)
 
 
 CodeDiscoverOptionsPage::CodeDiscoverOptionsPage ()
-  : widget_ (nullptr)
+  : widget_ (nullptr), classFlags_ (ShowAll)
 {
   setId (OPTIONS_PAGE_ID);
   setDisplayName (tr ("Code discover"));
@@ -147,6 +148,17 @@ const Settings &CodeDiscoverOptionsPage::settings () const
   return settings_;
 }
 
+ClassFlags CodeDiscoverOptionsPage::classFlags () const
+{
+  return classFlags_;
+}
+
+void CodeDiscoverOptionsPage::setClassFlags (ClassFlags flags)
+{
+  classFlags_ = flags;
+  save ();
+}
+
 void CodeDiscoverOptionsPage::load ()
 {
   QSettings &qsettings = *(Core::ICore::settings ());
@@ -154,6 +166,7 @@ void CodeDiscoverOptionsPage::load ()
   settings_.javaBinary = qsettings.value (SETTINGS_JAVA, settings_.javaBinary).toString ();
   settings_.umlBinary = qsettings.value (SETTINGS_UML, settings_.umlBinary).toString ();
   settings_.dotBinary = qsettings.value (SETTINGS_DOT, settings_.dotBinary).toString ();
+  classFlags_ = ClassFlags (qsettings.value (SETTINGS_CLASSFLAGS, classFlags_).toInt ());
   qsettings.endGroup ();
 }
 
@@ -164,6 +177,7 @@ void CodeDiscoverOptionsPage::save ()
   qsettings.setValue (SETTINGS_JAVA, settings_.javaBinary);
   qsettings.setValue (SETTINGS_UML, settings_.umlBinary);
   qsettings.setValue (SETTINGS_DOT, settings_.dotBinary);
+  qsettings.setValue (SETTINGS_CLASSFLAGS, classFlags_);
   qsettings.endGroup ();
 }
 
