@@ -26,6 +26,7 @@ void CodeDiscoverToolRunner::convert (const QString &text)
 {
   if (process_.isOpen ()) {
     process_.terminate ();
+    process_.waitForFinished ();
   }
   process_.start (command_, arguments_);
   if (!process_.waitForStarted (2000)) {
