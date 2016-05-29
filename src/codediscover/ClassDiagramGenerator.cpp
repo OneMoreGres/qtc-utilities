@@ -96,7 +96,7 @@ QString Generator::operator () (Symbol *symbol)
 
 bool isClassLike (const Symbol *s)
 {
-  return (s->isClass () || s->isEnum () || s->isTemplate ());
+  return (s->isClass () || s->isEnum ());
 }
 
 Symbol * Generator::find (const QString &name, Symbol *baseScope) const
@@ -111,9 +111,13 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
   auto items = toe_ (name.toUtf8 (), scope);
   for (auto item: items) {
     if (auto *d = item.declaration ()) {
-      if (isClassLike (d)) {
-        return d;
+      if (auto *t = d->asTemplate ()) {
+        d = t->declaration ();
       }
+      if (!isClassLike (d)) {
+        continue;
+      }
+      return d;
     }
   }
   return nullptr;
@@ -133,13 +137,6 @@ void Generator::addToSelectedHierarchy (const TypeHierarchy &hierarchy)
     }
   }
 
-  if (auto *t = symbol->asTemplate ()) {
-    auto *d = t->declaration ();
-    if (isClassLike (d)) {
-      addToSelectedHierarchy (d);
-    }
-  }
-
   for (const auto &subHierarchy: hierarchy.hierarchy ()) {
     addToSelectedHierarchy (subHierarchy);
   }
@@ -155,14 +152,7 @@ void Generator::processHierarchy (const TypeHierarchy &hierarchy)
   used_ << name;
 
   auto type = symbol->type ();
-  if (auto *t = type->asTemplateType ()) {
-    auto *d = t->declaration ();
-    if (isClassLike (d)) {
-      used_.removeAll (name); // because template and declaration have equal names
-      processHierarchy (d);
-    }
-  }
-  else if (auto *c = type->asClassType ()) {
+  if (auto *c = type->asClassType ()) {
     processClass (c, hierarchy.hierarchy ());
   }
   else if (auto *e = type->asEnumType ()) {
