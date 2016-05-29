@@ -308,7 +308,7 @@ QString Generator::member (Symbol *s, bool showDetails)
     if ((flags_ & ShowDependencies) && returnType->isNamedType ()) {
       processDependency (o_ (returnType), s->enclosingClass (), s);
     }
-    if ((flags_ & ShowMethods) && notFilteredByAccess && showDetails) {
+    if ((flags_ & ShowMethods) && notFilteredByAccess && showDetails && !f->isFriend ()) {
       return QString (QStringLiteral ("%1 %2 %3: %4"))
              .arg (lead, name, o_ (type), o_ (returnType));
     }
