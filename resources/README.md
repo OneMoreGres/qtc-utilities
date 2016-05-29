@@ -1,3 +1,3 @@
 # Icons
 
-* section.png - by [Freepik](http://www.freepik.com/) from www.flaticon.com
+* section.png, mode.png - by [Freepik](http://www.freepik.com/) from www.flaticon.com

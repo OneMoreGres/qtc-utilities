@@ -17,7 +17,12 @@ SOURCES += \
     src/organizeincludes/Include.cpp \
     src/organizeincludes/IncludeMap.cpp \
     src/organizeincludes/IncludesExtractor.cpp \
-    src/organizeincludes/Document.cpp
+    src/organizeincludes/Document.cpp \
+    src/codediscover/CodeDiscover.cpp \
+    src/codediscover/CodeDiscoverOptionsPage.cpp \
+    src/codediscover/CodeDiscoverWindow.cpp \
+    src/codediscover/CodeDiscoverToolRunner.cpp \
+    src/codediscover/ClassDiagramGenerator.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -38,7 +43,14 @@ HEADERS += \
     src/organizeincludes/Include.h \
     src/organizeincludes/IncludeMap.h \
     src/organizeincludes/IncludesExtractor.h \
-    src/organizeincludes/Document.h
+    src/organizeincludes/Document.h \
+    src/codediscover/CodeDiscover.h \
+    src/codediscover/CodeDiscoverConstants.h \
+    src/codediscover/CodeDiscoverSettings.h \
+    src/codediscover/CodeDiscoverOptionsPage.h \
+    src/codediscover/CodeDiscoverWindow.h \
+    src/codediscover/CodeDiscoverToolRunner.h \
+    src/codediscover/ClassDiagramGenerator.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
@@ -64,7 +76,8 @@ QTC_LIB_DEPENDS += \
 QTC_PLUGIN_DEPENDS += \
     coreplugin\
     projectexplorer\
-    cpptools
+    cpptools\
+    debugger
 
 QTC_PLUGIN_RECOMMENDS += \
     # optional plugin dependencies. nothing here at this time
