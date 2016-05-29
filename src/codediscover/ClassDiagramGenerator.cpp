@@ -37,7 +37,7 @@ class Generator
 
     QString accessType (const Symbol *s) const;
     QString abstractStaticType (const Symbol *s) const;
-    QString member (Symbol *s);
+    QString member (Symbol *s, bool showDetails);
     void processDependency (const QString &dependency, Class *dependant, Symbol *scope);
 
     Symbol * find (const QString &name, Symbol *baseScope) const;
@@ -128,17 +128,21 @@ void Generator::addToSelectedHierarchy (const TypeHierarchy &hierarchy)
   auto *symbol = hierarchy.symbol ();
   selectedHierarchy_ << symbol;
 
-  if (auto *c = symbol->asClass ()) {
-    for (uint i = 0, end = c->baseClassCount (); i < end; ++i) {
-      auto *base = c->baseClassAt (i);
-      if (auto *s = find (o_ (base->name ()), base)) {
-        addToSelectedHierarchy (s);
+  if (flags_ & ShowBase) {
+    if (auto *c = symbol->asClass ()) {
+      for (uint i = 0, end = c->baseClassCount (); i < end; ++i) {
+        auto *base = c->baseClassAt (i);
+        if (auto *s = find (o_ (base->name ()), base)) {
+          addToSelectedHierarchy (s);
+        }
       }
     }
   }
 
-  for (const auto &subHierarchy: hierarchy.hierarchy ()) {
-    addToSelectedHierarchy (subHierarchy);
+  if (flags_ & ShowDerived) {
+    for (const auto &subHierarchy: hierarchy.hierarchy ()) {
+      addToSelectedHierarchy (subHierarchy);
+    }
   }
 }
 
@@ -177,6 +181,10 @@ void Generator::processClass (const Class *c, const QList<TypeHierarchy> &hierar
   if (flags_ & ShowDerived) {
     for (const auto &subHierarchy: hierarchy) {
       processHierarchy (subHierarchy);
+      auto *s = subHierarchy.symbol ();
+      if (isClassLike (s)) {
+        relations_ << relation (c, Extension, s);
+      }
     }
   }
 }
@@ -196,11 +204,12 @@ QString Generator::classView (const Class *c)
 
   lines << QString (QStringLiteral ("%1 %2%3 {")).arg (type, namespacedName (c),
                                                        stereotype);
-  if (((flags_ & ShowHierarchyDetails) && selectedHierarchy_.contains (c))
-      || (flags_ & ShowDependsDetails)) {
-    for (uint i = 0, end = c->memberCount (); i < end; ++i) {
-      lines << member (c->memberAt (i));
-    }
+  auto inHierarchy = selectedHierarchy_.contains (c);
+  auto showMemberDetails = ((flags_ & ShowHierarchyDetails) && inHierarchy)
+                           || c == selected_
+                           || ((flags_ & ShowDependsDetails) && !inHierarchy);
+  for (uint i = 0, end = c->memberCount (); i < end; ++i) {
+    lines << member (c->memberAt (i), showMemberDetails);
   }
   lines << QStringLiteral ("}");
   return lines.join (QStringLiteral ("\n"));
@@ -286,28 +295,34 @@ void Generator::processEnum (const Enum *e)
   classes_ << lines.join (QStringLiteral ("\n"));
 }
 
-QString Generator::member (Symbol *s)
+QString Generator::member (Symbol *s, bool showDetails)
 {
-  auto lead = QString (accessType (s) + abstractStaticType (s));
+  auto access = accessType (s);
+  auto notFilteredByAccess = !access.isEmpty ();
+  auto lead = QString (access + abstractStaticType (s));
   auto type = s->type ();
   auto name = o_ (s->name ());
 
-  if (flags_ & ShowMethods) {
-    if (auto *f = type->asFunctionType ()) {
-      auto returnType = f->returnType ();
-      if ((flags_ & ShowDependencies) && returnType->isNamedType ()) {
-        processDependency (o_ (returnType), s->enclosingClass (), s);
-      }
+  if (auto *f = type->asFunctionType ()) {
+    auto returnType = f->returnType ();
+    if ((flags_ & ShowDependencies) && returnType->isNamedType ()) {
+      processDependency (o_ (returnType), s->enclosingClass (), s);
+    }
+    if ((flags_ & ShowMethods) && notFilteredByAccess && showDetails) {
       return QString (QStringLiteral ("%1 %2 %3: %4"))
              .arg (lead, name, o_ (type), o_ (returnType));
     }
+    return {};
   }
 
-  if (flags_ & ShowMembers && s->isDeclaration ()) {
+  if (s->isDeclaration ()) {
     if ((flags_ & ShowDependencies) && type->isNamedType ()) {
       processDependency (o_ (type), s->enclosingClass (), s);
     }
-    return QString (QStringLiteral ("%1 %2: %3")).arg (lead, name, o_ (type));
+    if ((flags_ & ShowMembers) && notFilteredByAccess && showDetails) {
+      return QString (QStringLiteral ("%1 %2: %3")).arg (lead, name, o_ (type));
+    }
+    return {};
   }
 
   if (isClassLike (s)) {
