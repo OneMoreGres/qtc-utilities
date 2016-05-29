@@ -1,8 +1,10 @@
 #pragma once
 
-#include <QObject>
-#include <QPixmap>
 #include <QProcess>
+
+QT_BEGIN_NAMESPACE
+class QPixmap;
+QT_END_NAMESPACE
 
 namespace QtcUtilities {
 namespace Internal {

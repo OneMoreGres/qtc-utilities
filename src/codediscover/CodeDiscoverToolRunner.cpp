@@ -1,5 +1,7 @@
 #include "CodeDiscoverToolRunner.h"
 
+#include <QPixmap>
+
 namespace QtcUtilities {
 namespace Internal {
 namespace CodeDiscover {
