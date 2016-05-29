@@ -3,6 +3,8 @@
 #include <QScrollArea>
 #include <QGridLayout>
 #include <QCheckBox>
+#include <QPushButton>
+#include <QFileDialog>
 #include <QDebug>
 
 namespace QtcUtilities {
@@ -29,6 +31,9 @@ CodeDiscoverWindow::CodeDiscoverWindow (ClassFlags flags, QWidget *parent,
   ADD_CHECKBOX (ShowHierarchyDetails, "Show base and derived details");
 #undef ADD_CHECKBOX
   flagsLayout->addStretch (1);
+  auto saveButton = new QPushButton (tr ("Save to file..."));
+  connect (saveButton, &QPushButton::clicked, this, &CodeDiscoverWindow::saveToFile);
+  flagsLayout->addWidget (saveButton);
 
   auto layout = new QGridLayout;
 
@@ -70,6 +75,18 @@ void CodeDiscoverWindow::updateFlags ()
     }
   }
   emit flagsChanged (flags);
+}
+
+void CodeDiscoverWindow::saveToFile ()
+{
+  QString extension = QStringLiteral (".png");
+  auto file = QFileDialog::getSaveFileName (this, {}, {}, QStringLiteral ("*.") + extension);
+  if (!file.isEmpty ()) {
+    if (!file.endsWith (extension)) {
+      file += extension;
+    }
+    imageLabel_->pixmap ()->save (file, "PNG");
+  }
 }
 
 } // namespace CodeDiscover

@@ -29,6 +29,7 @@ class CodeDiscoverWindow : public QWidget
 
   private slots:
     void updateFlags ();
+    void saveToFile ();
 
   private:
     QLabel *imageLabel_;
