@@ -43,6 +43,8 @@ class Generator
     void processDependency (const QString &dependency, Class *dependant, Symbol *scope);
 
     Symbol * find (const QString &name, Symbol *baseScope) const;
+    QString symbolFile (const Symbol *s) const;
+    bool fromSameProject (const Symbol *s) const;
     void addToSelectedHierarchy (const TypeHierarchy &hierarchy);
 
     ClassFlags flags_;
@@ -52,6 +54,7 @@ class Generator
     QStringList used_;
     QStringList classes_;
     QStringList relations_;
+    QStringList projectFiles_;
 
     Symbol *selected_;
     QSet<const Symbol *> selectedHierarchy_;
@@ -69,6 +72,12 @@ Generator::Generator (ClassFlags flags) :
 
 QString Generator::operator () (Symbol *symbol)
 {
+  for (auto part: CppModelManager::instance ()->projectPart (symbolFile (symbol))) {
+    for (auto file: part->files) {
+      projectFiles_ << file.path;
+    }
+  }
+
   selected_ = symbol;
   selectedHierarchy_ << symbol;
 
@@ -144,6 +153,16 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
     }
   }
   return nullptr;
+}
+
+QString Generator::symbolFile (const Symbol *s) const
+{
+  return QString::fromUtf8 (s->fileName (), int (s->fileNameLength ()));
+}
+
+bool Generator::fromSameProject (const Symbol *s) const
+{
+  return projectFiles_.contains (symbolFile (s));
 }
 
 void Generator::addToSelectedHierarchy (const TypeHierarchy &hierarchy)
@@ -228,9 +247,11 @@ QString Generator::classView (const Class *c)
   lines << QString (QStringLiteral ("%1 %2%3 {")).arg (type, namespacedName (c),
                                                        stereotype);
   auto inHierarchy = selectedHierarchy_.contains (c);
-  auto showMemberDetails = ((flags_ & ShowHierarchyDetails) && inHierarchy)
-                           || c == selected_
-                           || ((flags_ & ShowDependsDetails) && !inHierarchy);
+  auto showMemberDetails =
+    ((flags_ & ShowHierarchyDetails) && inHierarchy)
+    || c == selected_
+    || ((flags_ & ShowDependsDetails) && !inHierarchy)
+    || ((flags_ & ShowDetailsFromSameProject) && fromSameProject (c));
   for (uint i = 0, end = c->memberCount (); i < end; ++i) {
     lines << member (c->memberAt (i), showMemberDetails);
   }

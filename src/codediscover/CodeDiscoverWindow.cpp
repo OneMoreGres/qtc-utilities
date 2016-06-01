@@ -30,6 +30,7 @@ CodeDiscoverWindow::CodeDiscoverWindow (ClassFlags flags, QWidget *parent,
   ADD_CHECKBOX (ShowOnlyHierarchyDependencies, "Show only base and derived dependencies");
   ADD_CHECKBOX (ShowDependsDetails, "Show dependencies details");
   ADD_CHECKBOX (ShowHierarchyDetails, "Show base and derived details");
+  ADD_CHECKBOX (ShowDetailsFromSameProject, "Show same project symbols details");
   ADD_CHECKBOX (ShowNested, "Show nested classes");
 #undef ADD_CHECKBOX
   flagsLayout->addStretch (1);
