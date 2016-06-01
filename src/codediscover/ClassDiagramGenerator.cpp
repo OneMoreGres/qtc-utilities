@@ -5,6 +5,7 @@
 
 #include <cpptools/cppmodelmanager.h>
 #include <cpptools/typehierarchybuilder.h>
+#include <cpptools/symbolfinder.h>
 
 #include <utils/qtcassert.h>
 
@@ -53,6 +54,7 @@ class Generator
 
     Symbol *selected_;
     QSet<const Symbol *> selectedHierarchy_;
+    SymbolFinder *finder_;
 };
 
 Generator::Generator (ClassFlags flags) :
@@ -60,7 +62,7 @@ Generator::Generator (ClassFlags flags) :
   relationNames_ {{Extension, QStringLiteral ("<|--")},
                   {Dependency, QStringLiteral ("<...")},
                   {Association, QStringLiteral ("--")}},
-  selected_ (nullptr)
+  selected_ (nullptr), finder_ (CppModelManager::instance ()->symbolFinder ())
 {
 }
 
@@ -94,9 +96,20 @@ QString Generator::operator () (Symbol *symbol)
   return parts.join (QStringLiteral ("\n"));
 }
 
+
+FullySpecifiedType finalType (FullySpecifiedType t)
+{
+  auto type = t;
+  while (auto *p = type->asPointerType ()) {
+    type = p->elementType ();
+  }
+  return type;
+}
+
 bool isClassLike (const Symbol *s)
 {
-  return (s->isClass () || s->isEnum ());
+  auto type = finalType (s->type ());
+  return (type->isClassType () || type->isEnumType ());
 }
 
 Symbol * Generator::find (const QString &name, Symbol *baseScope) const
@@ -109,14 +122,23 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
   TypeOfExpression toe_;
   toe_.init (document, snapshot_);
   auto items = toe_ (name.toUtf8 (), scope);
+  Symbol *forward = nullptr;
   for (auto item: items) {
     if (auto *d = item.declaration ()) {
       if (auto *t = d->asTemplate ()) {
         d = t->declaration ();
       }
-      if (!isClassLike (d)) {
-        continue;
+      if (isClassLike (d)) {
+        return d;
       }
+      if (!forward && o_ (d->name ()) == name) {
+        forward = d->asForwardClassDeclaration ();
+      }
+    }
+  }
+  if (forward) {
+    auto *d = finder_->findMatchingClassDeclaration (forward, snapshot_);
+    if (d && isClassLike (d)) {
       return d;
     }
   }
@@ -155,7 +177,7 @@ void Generator::processHierarchy (const TypeHierarchy &hierarchy)
   }
   used_ << name;
 
-  auto type = symbol->type ();
+  auto type = finalType (symbol->type ());
   if (auto *c = type->asClassType ()) {
     processClass (c, hierarchy.hierarchy ());
   }
@@ -309,17 +331,17 @@ QString Generator::member (Symbol *s, bool showDetails)
   auto access = accessType (s);
   auto notFilteredByAccess = !access.isEmpty ();
   auto lead = QString (access + abstractStaticType (s));
-  auto type = s->type ();
+  auto type = finalType (s->type ());
   auto name = o_ (s->name ());
 
   if (auto *f = type->asFunctionType ()) {
-    auto returnType = f->returnType ();
+    auto returnType = finalType (f->returnType ());
     if ((flags_ & ShowDependencies) && returnType->isNamedType ()) {
       processDependency (o_ (returnType), s->enclosingClass (), s);
     }
     if ((flags_ & ShowMethods) && notFilteredByAccess && showDetails && !f->isFriend ()) {
       return QString (QStringLiteral ("%1 %2 %3: %4"))
-             .arg (lead, name, o_ (type), o_ (returnType));
+             .arg (lead, name, o_ (s->type ()), o_ (f->returnType ()));
     }
     return {};
   }
@@ -329,7 +351,7 @@ QString Generator::member (Symbol *s, bool showDetails)
       processDependency (o_ (type), s->enclosingClass (), s);
     }
     if ((flags_ & ShowMembers) && notFilteredByAccess && showDetails) {
-      return QString (QStringLiteral ("%1 %2: %3")).arg (lead, name, o_ (type));
+      return QString (QStringLiteral ("%1 %2: %3")).arg (lead, name, o_ (s->type ()));
     }
     return {};
   }
