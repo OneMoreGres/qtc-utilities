@@ -95,7 +95,7 @@ void CodeDiscover::registerActions ()
     auto action = new QAction (tr ("Show class diagram"), this);
     connect (action, &QAction::triggered, this, &CodeDiscover::showEntryClassDiagram);
     auto command = ActionManager::registerAction (action, ACTION_SHOW_CLASS_DIAGRAM);
-    command->setDefaultKeySequence (QKeySequence (tr ("Ctrl+Shift+A")));
+    command->setDefaultKeySequence (QKeySequence (tr ("Alt+D,Alt+C")));
     menu->addAction (command);
   }
 }
