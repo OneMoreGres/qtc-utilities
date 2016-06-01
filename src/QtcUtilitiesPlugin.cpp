@@ -2,6 +2,7 @@
 #include "clangtools/ClangTools.h"
 #include "dockedoutput/DockedOutput.h"
 #include "organizeincludes/IncludesOrganizer.h"
+#include "codediscover/CodeDiscover.h"
 
 #include <coreplugin/icore.h>
 
@@ -37,6 +38,7 @@ bool QtcUtilitiesPlugin::initialize (const QStringList & /*arguments*/, QString 
   addAutoReleasedObject (new OrganizeIncludes::IncludesOrganizer (this));
   addAutoReleasedObject (new DockedOutput::DockedOutputPane);
   addAutoReleasedObject (new ClangTools::ClangTools (this));
+  addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
 
   initTranslation ();
   return true;

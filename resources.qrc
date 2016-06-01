@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>resources/section.png</file>
         <file>resources/section@2x.png</file>
+        <file>resources/mode@2x.png</file>
+        <file>resources/mode.png</file>
     </qresource>
 </RCC>

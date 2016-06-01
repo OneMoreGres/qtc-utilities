@@ -19,3 +19,9 @@ So now it is possible to see several apps' output an once.
 ## Organize includes
 
 Removes unused, adds absent, resolves misplaced and sorts includes in current document.
+
+## Discover code
+
+Visualizes code structure/relations in uml notation.
+
+![Preview](dist/codediscover.png?raw=true)
