@@ -14,4 +14,4 @@ Also parses tools' output and shows it in Tasks pane.
 Makes additional application output pane that contains dock widgets instead of tab widgets.
 So now it is possible to see several apps' output an once.
 
-![Preview](dist/dockedoutput.png?raw=true)
+![Preview](dist/dockoutput.png?raw=true)
