@@ -238,7 +238,12 @@ QString Generator::relation (const Symbol *l, Relation relation, const Symbol *r
 QString Generator::namespacedName (const Symbol *s) const
 {
   QStringList classes;
-  classes << o_ (s->name ());
+  auto name = o_ (s->name ());
+  if (name.contains (QStringLiteral (":"))) {
+    name.replace (QStringLiteral (":"), QStringLiteral ("_"));
+  }
+  classes << name;
+
   for (auto *i = s->enclosingClass (); i; i = i->enclosingClass ()) {
     classes.prepend (o_ (i->name ()));
   }
