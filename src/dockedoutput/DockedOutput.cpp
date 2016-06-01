@@ -119,7 +119,7 @@ void DockedOutputWidget::markReady ()
 
 DockedOutputPane::DockedOutputPane ()
   : widget_ (new QMainWindow), isEnabledButton_ (new QToolButton),
-  isEnabled_ (true)
+  isEnabled_ (false)
 {
   isEnabledButton_->setCheckable (true);
   isEnabledButton_->setChecked (isEnabled_);
