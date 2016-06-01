@@ -82,13 +82,17 @@ void CodeDiscoverWindow::updateFlags ()
 
 void CodeDiscoverWindow::saveToFile ()
 {
+  const auto *pixmap = imageLabel_->pixmap ();
+  if (!pixmap || pixmap->isNull ()) {
+    return;
+  }
   QString extension = QStringLiteral (".png");
-  auto file = QFileDialog::getSaveFileName (this, {}, {}, QStringLiteral ("*.") + extension);
+  auto file = QFileDialog::getSaveFileName (this, {}, {}, QStringLiteral ("*") + extension);
   if (!file.isEmpty ()) {
     if (!file.endsWith (extension)) {
       file += extension;
     }
-    imageLabel_->pixmap ()->save (file, "PNG");
+    pixmap->save (file, "PNG");
   }
 }
 
