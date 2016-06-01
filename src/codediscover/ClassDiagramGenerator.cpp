@@ -239,6 +239,10 @@ QString Generator::namespacedName (const Symbol *s) const
 {
   QStringList classes;
   auto name = o_ (s->name ());
+  if (name.contains (QStringLiteral ("<"))) {
+    name.replace (QStringLiteral ("<"), QStringLiteral ("_"));
+    name.replace (QStringLiteral (">"), QStringLiteral ("_"));
+  }
   if (name.contains (QStringLiteral (":"))) {
     name.replace (QStringLiteral (":"), QStringLiteral ("_"));
   }
