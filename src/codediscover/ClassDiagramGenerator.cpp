@@ -367,6 +367,9 @@ QString Generator::member (Symbol *s, bool showDetails)
 void Generator::processDependency (const QString &dependency, Class *dependant,
                                    Symbol *scope)
 {
+  if ((flags_ & ShowOnlyHierarchyDependencies) && !selectedHierarchy_.contains (dependant)) {
+    return;
+  }
   if (auto *d = find (dependency, scope)) {
     processHierarchy (d);
     relations_ << relation (d, Dependency, dependant);

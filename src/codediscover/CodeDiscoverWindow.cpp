@@ -27,6 +27,7 @@ CodeDiscoverWindow::CodeDiscoverWindow (ClassFlags flags, QWidget *parent,
   ADD_CHECKBOX (ShowBase, "Show base classes");
   ADD_CHECKBOX (ShowDerived, "Show derived classes");
   ADD_CHECKBOX (ShowDependencies, "Show dependencies");
+  ADD_CHECKBOX (ShowOnlyHierarchyDependencies, "Show only base and derived dependencies");
   ADD_CHECKBOX (ShowDependsDetails, "Show dependencies details");
   ADD_CHECKBOX (ShowHierarchyDetails, "Show base and derived details");
 #undef ADD_CHECKBOX
