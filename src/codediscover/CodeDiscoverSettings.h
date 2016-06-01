@@ -19,10 +19,12 @@ enum ClassFlags {
   ShowDependsDetails = 1 << 8,
   ShowHierarchyDetails = 1 << 9,
   ShowOnlyHierarchyDependencies = 1 << 10,
+  ShowNested = 1 << 11,
 
   ShowAll = ShowMembers | ShowMethods | ShowPublic | ShowProtected | ShowPrivate
             | ShowBase | ShowDerived | ShowDependencies | ShowDependsDetails
             | ShowHierarchyDetails | ShowOnlyHierarchyDependencies
+            | ShowNested
 };
 
 struct Settings

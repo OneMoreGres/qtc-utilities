@@ -33,7 +33,8 @@ class Generator
 
     QString classView (const Class *c);
     bool isInterface (const Class *c) const;
-    QString relation (const Symbol *l, Relation relation, const Symbol *r) const;
+    QString relation (const Symbol *l, Relation relation, const Symbol *r,
+                      const QString &comment = {}) const;
     QString namespacedName (const Symbol *s) const;
 
     QString accessType (const Symbol *s) const;
@@ -250,11 +251,13 @@ bool Generator::isInterface (const Class *c) const
   return false;
 }
 
-QString Generator::relation (const Symbol *l, Relation relation, const Symbol *r) const
+QString Generator::relation (const Symbol *l, Relation relation, const Symbol *r,
+                             const QString &comment) const
 {
   return namespacedName (l)
          + relationNames_.value (relation, QStringLiteral ("--"))
-         + namespacedName (r);
+         + namespacedName (r)
+         + (comment.isEmpty () ? comment : QStringLiteral (": ") + comment);
 }
 
 QString Generator::namespacedName (const Symbol *s) const
@@ -356,9 +359,10 @@ QString Generator::member (Symbol *s, bool showDetails)
     return {};
   }
 
-  if (isClassLike (s)) {
+  if ((flags_ & ShowNested) && isClassLike (s)) {
     processHierarchy (s);
-    relations_ << relation (s, Association, s->enclosingClass ());
+    relations_ << relation (s, Association, s->enclosingClass (),
+                            QStringLiteral ("nested >"));
     return {};
   }
   return {};
