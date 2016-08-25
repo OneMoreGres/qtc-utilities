@@ -6,7 +6,7 @@
     \"Category\": \"Qt Creator\",
     \"Vendor\" : \"Gres\",
     \"Copyright\" : \"(C) Gres\",
-    \"License\" : \"LGPL v2.1\",
+    \"License\" : \"MIT\",
     \"Description\" : \"Various utilities\",
     \"Url\" : \"http://gres.biz/\",
     $$dependencyList
