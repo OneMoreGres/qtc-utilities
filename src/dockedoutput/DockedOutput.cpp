@@ -91,9 +91,7 @@ bool DockedOutputWidget::reuse (RunControl *rc)
   output_->grayOutOldContent ();
   isReady_ = false;
 
-  connect (rc, static_cast<void (RunControl::*)(
-                             RunControl *, const QString &,
-                             Utils::OutputFormat)>(&RunControl::appendMessage),
+  connect (rc, &RunControl::appendMessageRequested,
            this, &DockedOutputWidget::appendMessage, Qt::UniqueConnection);
   connect (rc, &RunControl::finished, this, &DockedOutputWidget::markReady,
            Qt::UniqueConnection);
