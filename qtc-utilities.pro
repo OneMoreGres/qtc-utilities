@@ -22,7 +22,11 @@ SOURCES += \
     src/codediscover/CodeDiscoverOptionsPage.cpp \
     src/codediscover/CodeDiscoverWindow.cpp \
     src/codediscover/CodeDiscoverToolRunner.cpp \
-    src/codediscover/ClassDiagramGenerator.cpp
+    src/codediscover/ClassDiagramGenerator.cpp \
+    src/oclint/Oclint.cpp \
+    src/oclint/OclintOptionsPage.cpp \
+    src/oclint/OclintOutputParser.cpp \
+    src/oclint/OclintRunner.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -50,7 +54,12 @@ HEADERS += \
     src/codediscover/CodeDiscoverOptionsPage.h \
     src/codediscover/CodeDiscoverWindow.h \
     src/codediscover/CodeDiscoverToolRunner.h \
-    src/codediscover/ClassDiagramGenerator.h
+    src/codediscover/ClassDiagramGenerator.h \
+    src/oclint/Oclint.h \
+    src/oclint/OclintConstants.h \
+    src/oclint/OclintOptionsPage.h \
+    src/oclint/OclintOutputParser.h \
+    src/oclint/OclintRunner.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
