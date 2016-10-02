@@ -249,6 +249,7 @@ void ToolOptionsPage::load ()
       for (const auto &type: types) {
         s.checkTypes << type.toInt ();
       }
+      s.checkTypes << CheckManual;
       qsettings.endGroup ();
       return s;
     };
