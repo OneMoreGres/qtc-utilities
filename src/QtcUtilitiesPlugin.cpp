@@ -3,6 +3,7 @@
 #include "dockedoutput/DockedOutput.h"
 #include "organizeincludes/IncludesOrganizer.h"
 #include "codediscover/CodeDiscover.h"
+#include "oclint/Oclint.h"
 
 #include <coreplugin/icore.h>
 
@@ -39,6 +40,7 @@ bool QtcUtilitiesPlugin::initialize (const QStringList & /*arguments*/, QString 
   addAutoReleasedObject (new DockedOutput::DockedOutputPane);
   addAutoReleasedObject (new ClangTools::ClangTools (this));
   addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
+  addAutoReleasedObject (new Oclint::Oclint (this));
 
   initTranslation ();
   return true;
@@ -68,7 +70,7 @@ void QtcUtilitiesPlugin::initTranslation ()
   auto paths = QStringList () << ICore::resourcePath () << ICore::userResourcePath ();
   QString trFile = QLatin1String ("QtcUtilities_") + language;
   auto translator = new QTranslator (this);
-  for (const auto &path: paths) {
+  for (const auto & path: paths) {
     if (translator->load (trFile, path + QLatin1String ("/translations"))) {
       qApp->installTranslator (translator);
       break;

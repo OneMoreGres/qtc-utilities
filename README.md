@@ -9,6 +9,12 @@ Allows to automatically run clang tools (tidy/modularize) on specific IDE events
 Also parses tools' output and shows it in Tasks pane.
 ![Preview](dist/clangtools.png?raw=true)
 
+## OCLint
+
+Allows to automatically run oclint static analyzer on specific IDE events
+(file changed, file added, project switched, ...).
+Also parses its output and shows it in Tasks pane.
+
 ## Docked output pane
 
 Makes additional application output pane that contains dock widgets instead of tab widgets.
