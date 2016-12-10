@@ -165,7 +165,7 @@ void Node::getBuilds (ModelItem &repository)
   manager_->get (request);
 }
 
-void Node::parseBuilds (const QByteArray &reply, ModelItem *repository)
+void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
 {
   auto doc = QJsonDocument::fromJson (reply);
   if (!doc.isArray ()) {
@@ -176,30 +176,30 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem *repository)
   for (QJsonValueRef value: doc.array ()) {
     if (auto build = parseBuild (value.toObject (), repository)) {
 
-      repository->addChild (build);
+      repository.addChild (build);
       emit added (build.data ());
 
-      auto lastStarted = repository->data (RepoFieldLastStarted).toDateTime ();
+      auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
       auto started = build->data (BuildFieldStarted).toDateTime ();
       if (lastStarted < started) {
-        repository->setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
-        repository->setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
-        repository->setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
-        repository->setData (RepoFieldLastStarted, started);
-        repository->setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
-        repository->setDecoration (build->decoration ());
+        repository.setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
+        repository.setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
+        repository.setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
+        repository.setData (RepoFieldLastStarted, started);
+        repository.setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
+        repository.setDecoration (build->decoration ());
         isRepoUpdated = true;
       }
     }
   }
   if (isRepoUpdated) {
-    emit updated (repository);
+    emit updated (&repository);
   }
 }
 
-QSharedPointer<ModelItem> Node::parseBuild (const QJsonObject &object, ModelItem *repository)
+QSharedPointer<ModelItem> Node::parseBuild (const QJsonObject &object, ModelItem &repository)
 {
-  auto build = QSharedPointer<ModelItem>::create (repository);
+  auto build = QSharedPointer<ModelItem>::create (&repository);
 
   build->setData (BuildFieldId, object["id"].toInt ());
   build->setData (BuildFieldStatus, object["status"].toString ());
