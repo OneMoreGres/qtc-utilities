@@ -33,6 +33,7 @@ class Model : public QAbstractItemModel
   private slots:
     void add (ModelItem *item);
     void update (ModelItem *item);
+    void reset ();
 
   private:
     QModelIndex index (ModelItem *item, int column = 0) const;

@@ -1,4 +1,5 @@
 #include "Drone.h"
+#include "NodeEdit.h"
 
 #include <coreplugin/messagemanager.h>
 
@@ -8,6 +9,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMenu>
+#include <QNetworkCookieJar>
 #include <QDebug>
 
 namespace {
@@ -44,15 +46,15 @@ namespace Internal {
 namespace Ci {
 namespace Drone {
 
-Node::Node (ModelItem &parent)
+
+Node::Node (ModelItem &parent, const Settings &settings)
   : ModelItem (&parent),
-  manager_ (new QNetworkAccessManager (this))
+  settings_ (settings), manager_ (new QNetworkAccessManager (this))
 {
-  setData (NodeFieldUrl, url_);
-  setData (NodeFieldUser, user_);
   connect (manager_, &QNetworkAccessManager::finished,
            this, &Node::replyFinished);
-  login ();
+
+  setSettings (settings);
 
   startTimer (3000);
 }
@@ -74,6 +76,10 @@ void Node::contextMenu (ModelItem *item)
   auto isJob = (level == 3);
   getLogsAction->setEnabled (isJob);
 
+  auto *editAction = menu.addAction (tr ("Edit"));
+  auto isNode = (level == 0);
+  editAction->setEnabled (isNode);
+
   auto *choice = menu.exec (QCursor::pos ());
 
   if (choice == getJobsAction) {
@@ -82,11 +88,19 @@ void Node::contextMenu (ModelItem *item)
   if (choice == getLogsAction) {
     getLogs (*item);
   }
+  if (choice == editAction) {
+    NodeEdit edit;
+    edit.setDrone (settings_);
+    auto res = edit.exec ();
+    if (res == QDialog::Accepted && edit.mode () == NodeEdit::Mode::Drone) {
+      setSettings (edit.drone ());
+    }
+  }
 }
 
 void Node::timerEvent (QTimerEvent */*e*/)
 {
-  if (!pendingReplies_.isEmpty ()) {
+  if (!pendingReplies_.isEmpty () || !settings_.isValid ()) {
     return;
   }
 
@@ -98,6 +112,10 @@ void Node::timerEvent (QTimerEvent */*e*/)
 
 void Node::replyFinished (QNetworkReply *reply)
 {
+  if (!pendingReplies_.contains (reply)) {
+    reply->deleteLater ();
+    return;
+  }
   pendingReplies_.removeAll (reply);
 
   auto request = reply->request ();
@@ -168,16 +186,16 @@ void Node::login ()
   QHttpPart user;
   user.setHeader (QNetworkRequest::ContentDispositionHeader,
                   QVariant ("form-data; name=\"username\""));
-  user.setBody (user_);
+  user.setBody (settings_.user);
   multiPart->append (user);
 
   QHttpPart pass;
   pass.setHeader (QNetworkRequest::ContentDispositionHeader,
                   QVariant ("form-data; name=\"password\""));
-  pass.setBody (pass_);
+  pass.setBody (settings_.pass);
   multiPart->append (pass);
 
-  auto url = url_;
+  auto url = settings_.url;
   url.setPath ("/authorize");
   QNetworkRequest request (url);
   request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
@@ -190,7 +208,7 @@ void Node::login ()
 
 void Node::getReposotories ()
 {
-  auto url = url_;
+  auto url = settings_.url;
   url.setPath ("/api/user/repos");
   QNetworkRequest request (url);
   request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
@@ -390,6 +408,37 @@ void Node::getLogs (ModelItem &job)
                         QVariant::fromValue (RequestType::GetLogs));
 
   pendingReplies_ << manager_->get (request);
+}
+
+Settings Node::settings () const
+{
+  return settings_;
+}
+
+void Node::setSettings (const Settings &settings)
+{
+  settings_ = settings;
+  setData (NodeFieldUrl, settings_.url);
+  setData (NodeFieldUser, settings_.user);
+  children_.clear ();
+  pendingReplies_.clear ();
+
+  auto *cookies = manager_->cookieJar ();
+  if (cookies) {
+    cookies->deleteLater ();
+  }
+  manager_->setCookieJar (new QNetworkCookieJar);
+
+  if (settings_.isValid ()) {
+    login ();
+  }
+
+  emit reset ();
+}
+
+bool Settings::isValid () const
+{
+  return !(url.isEmpty () || user.isEmpty ());
 }
 
 } // namespace Drone

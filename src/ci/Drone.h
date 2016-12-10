@@ -12,16 +12,29 @@ namespace Internal {
 namespace Ci {
 namespace Drone {
 
+struct Settings
+{
+  QUrl url;
+  QByteArray user;
+  QByteArray pass;
+
+  bool isValid () const;
+};
+
 class Node : public QObject, public ModelItem
 {
   Q_OBJECT
 
   public:
-    explicit Node (ModelItem &parent);
+    Node (ModelItem &parent, const Settings &settings);
+
+    Settings settings () const;
+    void setSettings (const Settings &settings);
 
   signals:
     void updated (ModelItem *item);
     void added (ModelItem *item);
+    void reset ();
 
   public slots:
     void contextMenu (ModelItem *item);
@@ -45,9 +58,7 @@ class Node : public QObject, public ModelItem
     void parseJob (const QJsonObject &object, ModelItem &job);
     void getLogs (ModelItem &job);
 
-    QUrl url_ {};
-    QByteArray user_ {};
-    QByteArray pass_ {};
+    Settings settings_;
 
     QList<QNetworkReply *> pendingReplies_;
     QNetworkAccessManager *manager_;

@@ -31,7 +31,8 @@ SOURCES += \
     src/ci/Drone.cpp \
     src/ci/Model.cpp \
     src/ci/Pane.cpp \
-    src/ci/ModelItem.cpp
+    src/ci/ModelItem.cpp \
+    src/ci/NodeEdit.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -69,7 +70,8 @@ HEADERS += \
     src/ci/Drone.h \
     src/ci/Model.h \
     src/ci/Pane.h \
-    src/ci/ModelItem.h
+    src/ci/ModelItem.h \
+    src/ci/NodeEdit.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts

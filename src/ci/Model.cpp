@@ -1,7 +1,9 @@
 #include "Model.h"
 #include "Drone.h"
+#include "NodeEdit.h"
 
 #include <QAbstractItemView>
+#include <QMenu>
 
 
 namespace QtcUtilities {
@@ -12,13 +14,6 @@ Model::Model (QObject *parent)
   : QAbstractItemModel (parent),
   root_ (new ModelItem (nullptr))
 {
-  auto node = QSharedPointer<Drone::Node>::create (*root_);
-  connect (node.data (), &Drone::Node::added, this, &Model::add);
-  connect (node.data (), &Drone::Node::updated, this, &Model::update);
-  connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
-  root_->addChild (node);
-
-
   header_ = QStringList {tr ("Name"), tr ("Status"), tr ("Started"), tr ("Finished"),
                          tr ("Branch"), tr ("Author"), tr ("Message")};
 }
@@ -105,6 +100,25 @@ void Model::contextMenu (const QPoint &point)
   }
   auto index = view->indexAt (point);
   if (!index.isValid ()) {
+    QMenu menu;
+    auto *addNode = menu.addAction (tr ("Add node"));
+
+    auto *choice = menu.exec (QCursor::pos ());
+
+    if (choice == addNode) {
+      NodeEdit edit;
+      auto res = edit.exec ();
+      if (res == QDialog::Accepted) {
+        if (edit.mode () == NodeEdit::Mode::Drone) {
+          auto node = QSharedPointer<Drone::Node>::create (*root_, edit.drone ());
+          connect (node.data (), &Drone::Node::added, this, &Model::add);
+          connect (node.data (), &Drone::Node::updated, this, &Model::update);
+          connect (node.data (), &Drone::Node::reset, this, &Model::reset);
+          connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
+          root_->addChild (node);
+        }
+      }
+    }
     return;
   }
   emit requestContextMenu (item (index));
