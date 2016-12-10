@@ -4,5 +4,8 @@
         <file>resources/section@2x.png</file>
         <file>resources/mode@2x.png</file>
         <file>resources/mode.png</file>
+        <file alias="success">resources/checked.png</file>
+        <file alias="failure">resources/cancel.png</file>
+        <file alias="working">resources/loading.png</file>
     </qresource>
 </RCC>
