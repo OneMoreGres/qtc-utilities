@@ -37,6 +37,10 @@ class Node : public QObject, public ModelItem
     void parseBuilds (const QByteArray &reply, ModelItem &repository);
     void parseBuild (const QJsonObject &object, ModelItem &build);
     void updateRepository (ModelItem &repository, const ModelItem &build);
+    void getJobs (ModelItem &build);
+    void parseJobs (const QByteArray &reply, ModelItem &build);
+    void parseJob (const QJsonObject &object, ModelItem &job);
+    void getLogs (ModelItem &job);
 
     QUrl url_ {};
     QByteArray user_ {};
