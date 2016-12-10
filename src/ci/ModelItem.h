@@ -24,6 +24,7 @@ class ModelItem
     int rowCount () const;
     int columnCount () const;
 
+    Decoration decoration () const;
     void setDecoration (Decoration decoration);
     void setData (int column, const QVariant &data);
     QVariant data (int column, int role = Qt::DisplayRole) const;

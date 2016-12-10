@@ -53,7 +53,6 @@ Node::Node (ModelItem &parent)
 
 void Node::timerEvent (QTimerEvent */*e*/)
 {
-
 }
 
 void Node::replyFinished (QNetworkReply *reply)
@@ -168,7 +167,6 @@ void Node::getBuilds (ModelItem &repository)
 
 void Node::parseBuilds (const QByteArray &reply, ModelItem *repository)
 {
-  qDebug () << reply;
   auto doc = QJsonDocument::fromJson (reply);
   if (!doc.isArray ()) {
     qCritical () << "wrong builds list format" << reply;
@@ -176,45 +174,53 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem *repository)
   }
   auto isRepoUpdated = false;
   for (QJsonValueRef value: doc.array ()) {
-    auto build = QSharedPointer<ModelItem>::create (repository);
+    if (auto build = parseBuild (value.toObject (), repository)) {
 
-    auto object = value.toObject ();
-    build->setData (BuildFieldId, object["id"].toInt ());
-    build->setData (BuildFieldStatus, object["status"].toString ());
-    build->setData (BuildFieldStarted,
-                    QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
-    build->setData (BuildFieldFinished,
-                    QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
-    build->setData (BuildFieldBranch, object["branch"].toString ());
-    build->setData (BuildFieldAuthor, object["author"].toString ());
-    build->setData (BuildFieldMessage, object["message"].toString ());
+      repository->addChild (build);
+      emit added (build.data ());
 
-    QMap<QString, ModelItem::Decoration> decorations {
-      {"success", ModelItem::Decoration::Success},
-      {"failure", ModelItem::Decoration::Failure},
-      {"working", ModelItem::Decoration::Working}
-    };
-    auto status = build->data (BuildFieldStatus).toString ();
-    auto decoration = decorations.value (status);
-    build->setDecoration (decoration);
-
-    repository->addChild (build);
-    emit added (build.data ());
-
-    auto lastStarted = repository->data (RepoFieldLastStarted).toDateTime ();
-    auto started = build->data (BuildFieldStarted).toDateTime ();
-    if (lastStarted < started) {
-      repository->setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
-      repository->setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
-      repository->setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
-      repository->setData (RepoFieldLastStarted, started);
-      repository->setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
-      repository->setDecoration (decoration);
+      auto lastStarted = repository->data (RepoFieldLastStarted).toDateTime ();
+      auto started = build->data (BuildFieldStarted).toDateTime ();
+      if (lastStarted < started) {
+        repository->setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
+        repository->setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
+        repository->setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
+        repository->setData (RepoFieldLastStarted, started);
+        repository->setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
+        repository->setDecoration (build->decoration ());
+        isRepoUpdated = true;
+      }
     }
   }
   if (isRepoUpdated) {
     emit updated (repository);
   }
+}
+
+QSharedPointer<ModelItem> Node::parseBuild (const QJsonObject &object, ModelItem *repository)
+{
+  auto build = QSharedPointer<ModelItem>::create (repository);
+
+  build->setData (BuildFieldId, object["id"].toInt ());
+  build->setData (BuildFieldStatus, object["status"].toString ());
+  build->setData (BuildFieldStarted,
+                  QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+  build->setData (BuildFieldFinished,
+                  QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+  build->setData (BuildFieldBranch, object["branch"].toString ());
+  build->setData (BuildFieldAuthor, object["author"].toString ());
+  build->setData (BuildFieldMessage, object["message"].toString ());
+
+  QMap<QString, ModelItem::Decoration> decorations {
+    {"success", ModelItem::Decoration::Success},
+    {"failure", ModelItem::Decoration::Failure},
+    {"working", ModelItem::Decoration::Working}
+  };
+  auto status = build->data (BuildFieldStatus).toString ();
+  auto decoration = decorations.value (status);
+  build->setDecoration (decoration);
+
+  return build;
 }
 
 } // namespace Drone

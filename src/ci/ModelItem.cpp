@@ -60,6 +60,11 @@ void ModelItem::setData (int column, const QVariant &data)
   data_[column] = data;
 }
 
+ModelItem::Decoration ModelItem::decoration () const
+{
+  return decoration_;
+}
+
 void ModelItem::setDecoration (Decoration decoration)
 {
   decoration_ = decoration;

@@ -5,6 +5,8 @@
 #include <QUrl>
 #include <QNetworkAccessManager>
 
+class QJsonObject;
+
 namespace QtcUtilities {
 namespace Internal {
 namespace Ci {
@@ -33,6 +35,7 @@ class Node : public QObject, public ModelItem
     void parseRepositories (const QByteArray &reply);
     void getBuilds (ModelItem &repository);
     void parseBuilds (const QByteArray &reply, ModelItem *repository);
+    QSharedPointer<ModelItem> parseBuild (const QJsonObject &object, ModelItem *repository);
 
     QUrl url_ {};
     QByteArray user_ {};
