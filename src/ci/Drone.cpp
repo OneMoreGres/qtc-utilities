@@ -10,7 +10,7 @@
 namespace {
 
 enum class RequestType {
-  Login, GetRepositories, GetBuilds, GetBuild
+  Login, GetRepositories, GetBuilds
 };
 enum class Attribute {
   RequestType = QNetworkRequest::User,
@@ -48,7 +48,7 @@ Node::Node (ModelItem &parent)
            this, &Node::replyFinished);
   login ();
 
-  startTimer (1000);
+  startTimer (3000);
 }
 
 void Node::timerEvent (QTimerEvent */*e*/)
@@ -58,12 +58,7 @@ void Node::timerEvent (QTimerEvent */*e*/)
   }
 
   for (auto repo: children_) {
-    for (auto build: repo->children ()) {
-      auto decoration = build->decoration ();
-      if (decoration == ModelItem::Decoration::Working) {
-        updateBuild (*build);
-      }
-    }
+    getBuilds (*repo);
   }
 
 }
@@ -73,14 +68,15 @@ void Node::replyFinished (QNetworkReply *reply)
   pendingReplies_.removeAll (reply);
 
   auto request = reply->request ();
+  auto requestType = request.attribute (QNetworkRequest::Attribute (Attribute::RequestType))
+                     .value<RequestType>();
+
   if (reply->error () != QNetworkReply::NoError) {
-    qCritical () << "reply error" << reply->errorString () << "on url" << request.url ();
+    qCritical () << "reply error" << reply->errorString () << int (reply->error ())
+                 << "on url" << request.url ();
     reply->deleteLater ();
     return;
   }
-
-  auto requestType = request.attribute (QNetworkRequest::Attribute (Attribute::RequestType))
-                     .value<RequestType>();
 
   switch (requestType) {
     case RequestType::Login:
@@ -100,26 +96,6 @@ void Node::replyFinished (QNetworkReply *reply)
           break;
         }
         parseBuilds (reply->readAll (), *repository);
-      }
-      break;
-
-    case RequestType::GetBuild:
-      {
-        auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
-        auto *build = context.value <ModelItem *> ();
-        if (!build) {
-          qCritical () << "build item is empty";
-          break;
-        }
-        auto raw = reply->readAll ();
-        auto doc = QJsonDocument::fromJson (raw);
-        if (!doc.isObject ()) {
-          qCritical () << "wrong build info format" << raw;
-          return;
-        }
-
-        parseBuild (doc.object (), *build);
-        emit updated (build);
       }
       break;
 
@@ -201,21 +177,6 @@ void Node::getBuilds (ModelItem &repository)
   pendingReplies_ << manager_->get (request);
 }
 
-void Node::updateBuild (ModelItem &build)
-{
-  auto repo = *build.parent ();
-  auto url = static_cast<Node *>(repo.parent ())->url_;
-  url.setPath ("/api/repos/" + repo.data (RepoFieldName).toString () + "/builds/"
-               + build.data (BuildFieldNumber).toString ());
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::GetBuild));
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
-                        QVariant::fromValue (&build));
-
-  pendingReplies_ << manager_->get (request);
-}
-
 void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
 {
   auto doc = QJsonDocument::fromJson (reply);
@@ -223,28 +184,30 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
     qCritical () << "wrong builds list format" << reply;
     return;
   }
-  auto isRepoUpdated = false;
   for (QJsonValueRef value: doc.array ()) {
-    auto build = QSharedPointer<ModelItem>::create (&repository);
-    parseBuild (value.toObject (), *build);
+    auto object = value.toObject ();
+    auto number = object["number"].toInt ();
 
+    auto found = false;
+    for (auto build: repository.children ()) {
+      if (number == build->data (BuildFieldNumber).toInt ()) {
+        if (build->decoration () == Decoration::Working) {
+          parseBuild (object, *build);
+          updateRepository (repository, *build);
+        }
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      continue;
+    }
+
+    auto build = QSharedPointer<ModelItem>::create (&repository);
+    parseBuild (object, *build);
     repository.addChild (build);
     emit added (build.data ());
-
-    auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
-    auto started = build->data (BuildFieldStarted).toDateTime ();
-    if (lastStarted < started) {
-      repository.setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
-      repository.setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
-      repository.setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
-      repository.setData (RepoFieldLastStarted, started);
-      repository.setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
-      repository.setDecoration (build->decoration ());
-      isRepoUpdated = true;
-    }
-  }
-  if (isRepoUpdated) {
-    emit updated (&repository);
   }
 }
 
@@ -258,7 +221,7 @@ void Node::parseBuild (const QJsonObject &object, ModelItem &build)
                  QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
   build.setData (BuildFieldBranch, object["branch"].toString ());
   build.setData (BuildFieldAuthor, object["author"].toString ());
-  build.setData (BuildFieldMessage, object["message"].toString ());
+  build.setData (BuildFieldMessage, object["message"].toString ().trimmed ());
 
   QMap<QString, ModelItem::Decoration> decorations {
     {"success", ModelItem::Decoration::Success},
@@ -268,6 +231,23 @@ void Node::parseBuild (const QJsonObject &object, ModelItem &build)
   auto status = build.data (BuildFieldStatus).toString ();
   auto decoration = decorations.value (status);
   build.setDecoration (decoration);
+
+  updateRepository (*build.parent (), build);
+}
+
+void Node::updateRepository (ModelItem &repository, const ModelItem &build)
+{
+  auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
+  auto started = build.data (BuildFieldStarted).toDateTime ();
+  if (lastStarted < started) {
+    repository.setData (RepoFieldLastBranch, build.data (BuildFieldBranch));
+    repository.setData (RepoFieldLastAuthor, build.data (BuildFieldAuthor));
+    repository.setData (RepoFieldLastMessage, build.data (BuildFieldMessage));
+    repository.setData (RepoFieldLastStarted, started);
+    repository.setData (RepoFieldLastFinished, build.data (BuildFieldFinished));
+    repository.setDecoration (build.decoration ());
+    emit updated (&repository);
+  }
 }
 
 } // namespace Drone

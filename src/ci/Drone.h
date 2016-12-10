@@ -34,9 +34,9 @@ class Node : public QObject, public ModelItem
     void getReposotories ();
     void parseRepositories (const QByteArray &reply);
     void getBuilds (ModelItem &repository);
-    void updateBuild (ModelItem &build);
     void parseBuilds (const QByteArray &reply, ModelItem &repository);
     void parseBuild (const QJsonObject &object, ModelItem &build);
+    void updateRepository (ModelItem &repository, const ModelItem &build);
 
     QUrl url_ {};
     QByteArray user_ {};

@@ -14,7 +14,7 @@ class ModelItem
       None, Success, Failure, Working
     };
     using Data = QVariantList;
-    ModelItem (ModelItem *parent);
+    explicit ModelItem (ModelItem *parent);
     virtual ~ModelItem ();
 
     ModelItem * parent () const;
