@@ -14,6 +14,10 @@ Model::Model (QObject *parent)
   connect (node.data (), &Drone::Node::added, this, &Model::add);
   connect (node.data (), &Drone::Node::updated, this, &Model::update);
   root_->addChild (node);
+
+
+  header_ = QStringList {tr ("Name"), tr ("Status"), tr ("Started"), tr ("Finished"),
+                         tr ("Branch"), tr ("Author"), tr ("Message")};
 }
 
 Model::~Model ()
@@ -64,7 +68,7 @@ int Model::rowCount (const QModelIndex &parent) const
 int Model::columnCount (const QModelIndex &parent) const
 {
   if (!parent.isValid ()) {
-    return 5;
+    return header_.size ();
   }
   auto *ptr = item (parent);
   return ptr->columnCount ();
@@ -74,6 +78,20 @@ QVariant Model::data (const QModelIndex &index, int role) const
 {
   auto *ptr = item (index);
   return ptr->data (index.column (), role);
+}
+
+QVariant Model::headerData (int section, Qt::Orientation orientation, int role) const
+{
+  if (role != Qt::DisplayRole) {
+    return {};
+  }
+  if (orientation == Qt::Vertical) {
+    return section + 1;
+  }
+  if (section < header_.size ()) {
+    return header_[section];
+  }
+  return section + 1;
 }
 
 void Model::add (ModelItem *item)
