@@ -24,6 +24,12 @@ class Model : public QAbstractItemModel
     QVariant data (const QModelIndex &index, int role) const override;
     QVariant headerData (int section, Qt::Orientation orientation, int role) const override;
 
+  signals:
+    void requestContextMenu (ModelItem *item);
+
+  public slots:
+    void contextMenu (const QPoint &point);
+
   private slots:
     void add (ModelItem *item);
     void update (ModelItem *item);

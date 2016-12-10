@@ -10,6 +10,9 @@ Pane::Pane ()
 {
   widget_->setModel (model_);
   widget_->setEditTriggers (QAbstractItemView::NoEditTriggers);
+  widget_->setContextMenuPolicy (Qt::CustomContextMenu);
+  connect (widget_, &QTreeView::customContextMenuRequested,
+           model_, &Model::contextMenu);
 }
 
 Pane::~Pane ()

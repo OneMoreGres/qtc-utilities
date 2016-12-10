@@ -31,6 +31,8 @@ class ModelItem
 
     QList<QSharedPointer<ModelItem> > children () const;
 
+    int levelInTree (ModelItem *item, int current = 0) const;
+
   protected:
     ModelItem *parent_;
     Data data_;

@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMenu>
 #include <QDebug>
 
 namespace {
@@ -54,6 +55,33 @@ Node::Node (ModelItem &parent)
   login ();
 
   startTimer (3000);
+}
+
+void Node::contextMenu (ModelItem *item)
+{
+  auto level = levelInTree (item);
+  if (level == -1) {
+    return;
+  }
+
+  QMenu menu;
+
+  auto isBuild = (level == 2);
+  auto *getJobsAction = menu.addAction (tr ("Get jobs"));
+  getJobsAction->setEnabled (isBuild);
+
+  auto *getLogsAction = menu.addAction (tr ("Get logs"));
+  auto isJob = (level == 3);
+  getLogsAction->setEnabled (isJob);
+
+  auto *choice = menu.exec (QCursor::pos ());
+
+  if (choice == getJobsAction) {
+    getJobs (*item);
+  }
+  if (choice == getLogsAction) {
+    getLogs (*item);
+  }
 }
 
 void Node::timerEvent (QTimerEvent */*e*/)

@@ -105,6 +105,20 @@ QList<QSharedPointer<ModelItem> > ModelItem::children () const
   return children_;
 }
 
+int ModelItem::levelInTree (ModelItem *item, int current) const
+{
+  if (item == this) {
+    return current;
+  }
+  for (auto child: children_) {
+    auto level = child->levelInTree (item, current + 1);
+    if (level != -1) {
+      return level;
+    }
+  }
+  return -1;
+}
+
 } // namespace Ci
 } // namespace Internal
 } // namespace QtcUtilities

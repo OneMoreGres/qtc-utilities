@@ -23,6 +23,9 @@ class Node : public QObject, public ModelItem
     void updated (ModelItem *item);
     void added (ModelItem *item);
 
+  public slots:
+    void contextMenu (ModelItem *item);
+
   protected:
     void timerEvent (QTimerEvent *e) override;
 

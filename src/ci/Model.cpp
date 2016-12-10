@@ -1,6 +1,8 @@
 #include "Model.h"
 #include "Drone.h"
 
+#include <QAbstractItemView>
+
 
 namespace QtcUtilities {
 namespace Internal {
@@ -13,6 +15,7 @@ Model::Model (QObject *parent)
   auto node = QSharedPointer<Drone::Node>::create (*root_);
   connect (node.data (), &Drone::Node::added, this, &Model::add);
   connect (node.data (), &Drone::Node::updated, this, &Model::update);
+  connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
   root_->addChild (node);
 
 
@@ -92,6 +95,19 @@ QVariant Model::headerData (int section, Qt::Orientation orientation, int role) 
     return header_[section];
   }
   return section + 1;
+}
+
+void Model::contextMenu (const QPoint &point)
+{
+  auto *view = qobject_cast<QAbstractItemView *> (sender ());
+  if (!view) {
+    return;
+  }
+  auto index = view->indexAt (point);
+  if (!index.isValid ()) {
+    return;
+  }
+  emit requestContextMenu (item (index));
 }
 
 void Model::add (ModelItem *item)
