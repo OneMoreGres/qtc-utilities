@@ -29,6 +29,8 @@ class ModelItem
     void setData (int column, const QVariant &data);
     QVariant data (int column, int role = Qt::DisplayRole) const;
 
+    QList<QSharedPointer<ModelItem> > children () const;
+
   protected:
     ModelItem *parent_;
     Data data_;

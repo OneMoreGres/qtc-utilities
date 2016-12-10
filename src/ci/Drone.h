@@ -34,13 +34,15 @@ class Node : public QObject, public ModelItem
     void getReposotories ();
     void parseRepositories (const QByteArray &reply);
     void getBuilds (ModelItem &repository);
+    void updateBuild (ModelItem &build);
     void parseBuilds (const QByteArray &reply, ModelItem &repository);
-    QSharedPointer<ModelItem> parseBuild (const QJsonObject &object, ModelItem &repository);
+    void parseBuild (const QJsonObject &object, ModelItem &build);
 
     QUrl url_ {};
     QByteArray user_ {};
     QByteArray pass_ {};
 
+    QList<QNetworkReply *> pendingReplies_;
     QNetworkAccessManager *manager_;
 };
 

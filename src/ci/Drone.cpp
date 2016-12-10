@@ -10,7 +10,7 @@
 namespace {
 
 enum class RequestType {
-  Login, GetRepositories, GetBuilds
+  Login, GetRepositories, GetBuilds, GetBuild
 };
 enum class Attribute {
   RequestType = QNetworkRequest::User,
@@ -25,7 +25,7 @@ enum RepoField {
   RepoFieldLastBranch, RepoFieldLastAuthor, RepoFieldLastMessage
 };
 enum BuildField {
-  BuildFieldId, BuildFieldStatus, BuildFieldStarted, BuildFieldFinished,
+  BuildFieldNumber, BuildFieldStatus, BuildFieldStarted, BuildFieldFinished,
   BuildFieldBranch, BuildFieldAuthor, BuildFieldMessage
 };
 
@@ -53,10 +53,25 @@ Node::Node (ModelItem &parent)
 
 void Node::timerEvent (QTimerEvent */*e*/)
 {
+  if (!pendingReplies_.isEmpty ()) {
+    return;
+  }
+
+  for (auto repo: children_) {
+    for (auto build: repo->children ()) {
+      auto decoration = build->decoration ();
+      if (decoration == ModelItem::Decoration::Working) {
+        updateBuild (*build);
+      }
+    }
+  }
+
 }
 
 void Node::replyFinished (QNetworkReply *reply)
 {
+  pendingReplies_.removeAll (reply);
+
   auto request = reply->request ();
   if (reply->error () != QNetworkReply::NoError) {
     qCritical () << "reply error" << reply->errorString () << "on url" << request.url ();
@@ -84,7 +99,27 @@ void Node::replyFinished (QNetworkReply *reply)
           qCritical () << "repository item is empty";
           break;
         }
-        parseBuilds (reply->readAll (), repository);
+        parseBuilds (reply->readAll (), *repository);
+      }
+      break;
+
+    case RequestType::GetBuild:
+      {
+        auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
+        auto *build = context.value <ModelItem *> ();
+        if (!build) {
+          qCritical () << "build item is empty";
+          break;
+        }
+        auto raw = reply->readAll ();
+        auto doc = QJsonDocument::fromJson (raw);
+        if (!doc.isObject ()) {
+          qCritical () << "wrong build info format" << raw;
+          return;
+        }
+
+        parseBuild (doc.object (), *build);
+        emit updated (build);
       }
       break;
 
@@ -118,6 +153,7 @@ void Node::login ()
 
   QNetworkReply *reply = manager_->post (request, multiPart);
   multiPart->setParent (reply);
+  pendingReplies_ << reply;
 }
 
 void Node::getReposotories ()
@@ -128,7 +164,7 @@ void Node::getReposotories ()
   request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
                         QVariant::fromValue (RequestType::GetRepositories));
 
-  manager_->get (request);
+  pendingReplies_ << manager_->get (request);
 }
 
 void Node::parseRepositories (const QByteArray &reply)
@@ -162,7 +198,22 @@ void Node::getBuilds (ModelItem &repository)
   request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
                         QVariant::fromValue (&repository));
 
-  manager_->get (request);
+  pendingReplies_ << manager_->get (request);
+}
+
+void Node::updateBuild (ModelItem &build)
+{
+  auto repo = *build.parent ();
+  auto url = static_cast<Node *>(repo.parent ())->url_;
+  url.setPath ("/api/repos/" + repo.data (RepoFieldName).toString () + "/builds/"
+               + build.data (BuildFieldNumber).toString ());
+  QNetworkRequest request (url);
+  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                        QVariant::fromValue (RequestType::GetBuild));
+  request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
+                        QVariant::fromValue (&build));
+
+  pendingReplies_ << manager_->get (request);
 }
 
 void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
@@ -174,22 +225,22 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
   }
   auto isRepoUpdated = false;
   for (QJsonValueRef value: doc.array ()) {
-    if (auto build = parseBuild (value.toObject (), repository)) {
+    auto build = QSharedPointer<ModelItem>::create (&repository);
+    parseBuild (value.toObject (), *build);
 
-      repository.addChild (build);
-      emit added (build.data ());
+    repository.addChild (build);
+    emit added (build.data ());
 
-      auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
-      auto started = build->data (BuildFieldStarted).toDateTime ();
-      if (lastStarted < started) {
-        repository.setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
-        repository.setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
-        repository.setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
-        repository.setData (RepoFieldLastStarted, started);
-        repository.setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
-        repository.setDecoration (build->decoration ());
-        isRepoUpdated = true;
-      }
+    auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
+    auto started = build->data (BuildFieldStarted).toDateTime ();
+    if (lastStarted < started) {
+      repository.setData (RepoFieldLastBranch, build->data (BuildFieldBranch));
+      repository.setData (RepoFieldLastAuthor, build->data (BuildFieldAuthor));
+      repository.setData (RepoFieldLastMessage, build->data (BuildFieldMessage));
+      repository.setData (RepoFieldLastStarted, started);
+      repository.setData (RepoFieldLastFinished, build->data (BuildFieldFinished));
+      repository.setDecoration (build->decoration ());
+      isRepoUpdated = true;
     }
   }
   if (isRepoUpdated) {
@@ -197,30 +248,26 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
   }
 }
 
-QSharedPointer<ModelItem> Node::parseBuild (const QJsonObject &object, ModelItem &repository)
+void Node::parseBuild (const QJsonObject &object, ModelItem &build)
 {
-  auto build = QSharedPointer<ModelItem>::create (&repository);
-
-  build->setData (BuildFieldId, object["id"].toInt ());
-  build->setData (BuildFieldStatus, object["status"].toString ());
-  build->setData (BuildFieldStarted,
-                  QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
-  build->setData (BuildFieldFinished,
-                  QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
-  build->setData (BuildFieldBranch, object["branch"].toString ());
-  build->setData (BuildFieldAuthor, object["author"].toString ());
-  build->setData (BuildFieldMessage, object["message"].toString ());
+  build.setData (BuildFieldNumber, object["number"].toInt ());
+  build.setData (BuildFieldStatus, object["status"].toString ());
+  build.setData (BuildFieldStarted,
+                 QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+  build.setData (BuildFieldFinished,
+                 QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+  build.setData (BuildFieldBranch, object["branch"].toString ());
+  build.setData (BuildFieldAuthor, object["author"].toString ());
+  build.setData (BuildFieldMessage, object["message"].toString ());
 
   QMap<QString, ModelItem::Decoration> decorations {
     {"success", ModelItem::Decoration::Success},
     {"failure", ModelItem::Decoration::Failure},
     {"working", ModelItem::Decoration::Working}
   };
-  auto status = build->data (BuildFieldStatus).toString ();
+  auto status = build.data (BuildFieldStatus).toString ();
   auto decoration = decorations.value (status);
-  build->setDecoration (decoration);
-
-  return build;
+  build.setDecoration (decoration);
 }
 
 } // namespace Drone

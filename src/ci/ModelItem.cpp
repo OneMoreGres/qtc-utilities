@@ -100,6 +100,11 @@ QVariant ModelItem::data (int column, int role) const
   return {};
 }
 
+QList<QSharedPointer<ModelItem> > ModelItem::children () const
+{
+  return children_;
+}
+
 } // namespace Ci
 } // namespace Internal
 } // namespace QtcUtilities
