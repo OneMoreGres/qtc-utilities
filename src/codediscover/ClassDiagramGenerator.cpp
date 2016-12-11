@@ -27,8 +27,8 @@ class Generator
     QString operator () (Symbol *symbol);
 
   private:
-    void processHierarchy (const TypeHierarchy &hierarchy);
-    void processClass (const Class *c, const QList<TypeHierarchy> &hierarchy);
+    void processHierarchy (const TypeHierarchy &hierarchy, bool isDependency = false);
+    void processClass (const Class *c, const QList<TypeHierarchy> &hierarchy, bool isDependency);
     void processEnum (const Enum *e);
 
     QString classView (const Class *c);
@@ -195,7 +195,7 @@ void Generator::addToSelectedHierarchy (const TypeHierarchy &hierarchy)
   }
 }
 
-void Generator::processHierarchy (const TypeHierarchy &hierarchy)
+void Generator::processHierarchy (const TypeHierarchy &hierarchy, bool isDependency)
 {
   auto *symbol = hierarchy.symbol ();
   auto name = o_ (symbol->name ());
@@ -206,20 +206,25 @@ void Generator::processHierarchy (const TypeHierarchy &hierarchy)
 
   auto type = finalType (symbol->type ());
   if (auto *c = type->asClassType ()) {
-    processClass (c, hierarchy.hierarchy ());
+    processClass (c, hierarchy.hierarchy (), isDependency);
   }
   else if (auto *e = type->asEnumType ()) {
     processEnum (e);
   }
 }
 
-void Generator::processClass (const Class *c, const QList<TypeHierarchy> &hierarchy)
+void Generator::processClass (const Class *c, const QList<TypeHierarchy> &hierarchy,
+                              bool isDependency)
 {
   if (flags_ & ShowSameProjectSymbols && !fromSameProject (c)) {
     return;
   }
 
   classes_ << classView (c);
+
+  if (isDependency && !(flags_ & ShowDependenciesHierarchy)) {
+    return;
+  }
 
   if (flags_ & ShowBase) {
     for (uint i = 0, end = c->baseClassCount (); i < end; ++i) {
@@ -410,7 +415,7 @@ void Generator::processDependency (const QString &dependency, Class *dependant,
     if (flags_ & ShowSameProjectSymbols && !fromSameProject (d)) {
       return;
     }
-    processHierarchy (d);
+    processHierarchy (d, true);
     relations_ << relation (d, Dependency, dependant);
   }
 
