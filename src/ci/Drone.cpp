@@ -2,6 +2,7 @@
 #include "NodeEdit.h"
 
 #include <coreplugin/messagemanager.h>
+#include <coreplugin/progressmanager/progressmanager.h>
 
 #include <QNetworkReply>
 #include <QHttpMultiPart>
@@ -49,7 +50,8 @@ namespace Drone {
 
 Node::Node (ModelItem &parent, const Settings &settings)
   : ModelItem (&parent),
-  settings_ (settings), manager_ (new QNetworkAccessManager (this))
+  settings_ (settings), manager_ (new QNetworkAccessManager (this)),
+  futureInterface_ (nullptr)
 {
   connect (manager_, &QNetworkAccessManager::finished,
            this, &Node::replyFinished);
@@ -57,6 +59,11 @@ Node::Node (ModelItem &parent, const Settings &settings)
   setSettings (settings);
 
   startTimer (3000);
+}
+
+Node::~Node ()
+{
+  delete futureInterface_;
 }
 
 void Node::contextMenu (ModelItem *item)
@@ -320,6 +327,20 @@ void Node::updateRepository (ModelItem &repository, const ModelItem &build)
     repository.setData (RepoFieldLastFinished, build.data (BuildFieldFinished));
     repository.setDecoration (build.decoration ());
     emit updated (&repository);
+
+    auto decoration = build.decoration ();
+    if (decoration == Decoration::Running && !futureInterface_) {
+      futureInterface_ = new QFutureInterface<void>;
+      QString message = tr ("Drone ci ") + repository.data (RepoFieldName).toString ();
+      Core::ProgressManager::addTask (futureInterface_->future (), message, "CI.Drone.Running");
+      futureInterface_->reportStarted ();
+    }
+    else if (decoration != Decoration::Running && decoration != Decoration::Pending
+             && futureInterface_) {
+      futureInterface_->reportFinished ();
+      delete futureInterface_;
+      futureInterface_ = nullptr;
+    }
   }
 }
 

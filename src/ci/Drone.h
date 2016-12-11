@@ -4,6 +4,7 @@
 
 #include <QUrl>
 #include <QNetworkAccessManager>
+#include <QFuture>
 
 class QJsonObject;
 
@@ -30,6 +31,7 @@ class Node : public QObject, public ModelItem
 
   public:
     Node (ModelItem &parent, const Settings &settings);
+    ~Node ();
 
     Settings settings () const;
     void setSettings (const Settings &settings);
@@ -67,6 +69,7 @@ class Node : public QObject, public ModelItem
 
     QList<QNetworkReply *> pendingReplies_;
     QNetworkAccessManager *manager_;
+    QFutureInterface<void> *futureInterface_;
 };
 
 } // namespace Drone
