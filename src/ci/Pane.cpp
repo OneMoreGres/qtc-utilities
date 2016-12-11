@@ -37,7 +37,7 @@ QString Pane::displayName () const
 
 int Pane::priorityInStatusBar () const
 {
-  return 90;
+  return 30;
 }
 
 void Pane::clearContents ()
