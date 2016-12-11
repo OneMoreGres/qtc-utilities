@@ -31,3 +31,10 @@ Removes unused, adds absent, resolves misplaced and sorts includes in current do
 Visualizes code structure/relations in uml notation.
 
 ![Preview](dist/codediscover.png?raw=true)
+
+## Continuous integration
+
+Adds pane with continuous integration status. Shows repository and build information.
+Currently supports [drone.io](https://drone.io/).
+
+![Preview](dist/ci.png?raw=true)
