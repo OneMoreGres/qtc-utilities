@@ -11,7 +11,7 @@ class ModelItem
 {
   public:
     enum class Decoration {
-      None, Success, Failure, Working
+      None, Success, Failure, Running, Skipped, Pending
     };
     using Data = QVariantList;
     explicit ModelItem (ModelItem *parent);

@@ -88,7 +88,8 @@ QVariant ModelItem::data (int column, int role) const
   else if (role == Qt::DecorationRole && column == 0) {
     static QMap<Decoration, QString> names {
       {Decoration::None, ""}, {Decoration::Success, ":success"},
-      {Decoration::Failure, ":failure"}, {Decoration::Working, ":working"}
+      {Decoration::Failure, ":failure"}, {Decoration::Running, ":running"},
+      {Decoration::Skipped, ":skipped"}, {Decoration::Pending, ":pending"}
     };
     auto name = names.value (decoration_);
     if (!name.isEmpty ()) {

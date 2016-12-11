@@ -265,7 +265,7 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
     auto found = false;
     for (auto build: repository.children ()) {
       if (number == build->data (BuildFieldNumber).toInt ()) {
-        if (build->decoration () == Decoration::Working) {
+        if (build->decoration () == Decoration::Running) {
           parseBuild (object, *build);
           updateRepository (repository, *build);
         }
@@ -297,13 +297,8 @@ void Node::parseBuild (const QJsonObject &object, ModelItem &build)
   build.setData (BuildFieldAuthor, object["author"].toString ());
   build.setData (BuildFieldMessage, object["message"].toString ().trimmed ());
 
-  QMap<QString, ModelItem::Decoration> decorations {
-    {"success", ModelItem::Decoration::Success},
-    {"failure", ModelItem::Decoration::Failure},
-    {"working", ModelItem::Decoration::Working}
-  };
   auto status = build.data (BuildFieldStatus).toString ();
-  auto decoration = decorations.value (status);
+  auto decoration = decorationForStatus (status);
   build.setDecoration (decoration);
   if (decoration == ModelItem::Decoration::Failure) {
     getJobs (build);
@@ -385,13 +380,8 @@ void Node::parseJob (const QJsonObject &object, ModelItem &job)
   job.setData (JobFieldFinished,
                QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
 
-  QMap<QString, ModelItem::Decoration> decorations {
-    {"success", ModelItem::Decoration::Success},
-    {"failure", ModelItem::Decoration::Failure},
-    {"working", ModelItem::Decoration::Working}
-  };
   auto status = job.data (JobFieldStatus).toString ();
-  auto decoration = decorations.value (status);
+  auto decoration = decorationForStatus (status);
   job.setDecoration (decoration);
 }
 
@@ -408,6 +398,20 @@ void Node::getLogs (ModelItem &job)
                         QVariant::fromValue (RequestType::GetLogs));
 
   pendingReplies_ << manager_->get (request);
+}
+
+ModelItem::Decoration Node::decorationForStatus (const QString &status) const
+{
+  QMap<QString, ModelItem::Decoration> decorations {
+    {"skipped", ModelItem::Decoration::Skipped},
+    {"pending", ModelItem::Decoration::Pending},
+    {"running", ModelItem::Decoration::Running},
+    {"failure", ModelItem::Decoration::Failure},
+    {"success", ModelItem::Decoration::Success},
+    {"killed", ModelItem::Decoration::Failure},
+    {"error", ModelItem::Decoration::Failure}
+  };
+  return decorations.value (status);
 }
 
 Settings Node::settings () const

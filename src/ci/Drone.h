@@ -61,6 +61,8 @@ class Node : public QObject, public ModelItem
     void parseJob (const QJsonObject &object, ModelItem &job);
     void getLogs (ModelItem &job);
 
+    Decoration decorationForStatus (const QString &status) const;
+
     Settings settings_;
 
     QList<QNetworkReply *> pendingReplies_;
