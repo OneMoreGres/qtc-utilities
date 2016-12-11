@@ -4,6 +4,7 @@
 #include "organizeincludes/IncludesOrganizer.h"
 #include "codediscover/CodeDiscover.h"
 #include "oclint/Oclint.h"
+#include "ci/Ci.h"
 
 #include <coreplugin/icore.h>
 
@@ -41,6 +42,7 @@ bool QtcUtilitiesPlugin::initialize (const QStringList & /*arguments*/, QString 
   addAutoReleasedObject (new ClangTools::ClangTools (this));
   addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
   addAutoReleasedObject (new Oclint::Oclint (this));
+  addAutoReleasedObject (new Ci::Ci (this));
 
   initTranslation ();
   return true;

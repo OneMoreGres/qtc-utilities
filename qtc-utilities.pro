@@ -26,7 +26,13 @@ SOURCES += \
     src/oclint/Oclint.cpp \
     src/oclint/OclintOptionsPage.cpp \
     src/oclint/OclintOutputParser.cpp \
-    src/oclint/OclintRunner.cpp
+    src/oclint/OclintRunner.cpp \
+    src/ci/Ci.cpp \
+    src/ci/Drone.cpp \
+    src/ci/Model.cpp \
+    src/ci/Pane.cpp \
+    src/ci/ModelItem.cpp \
+    src/ci/NodeEdit.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -59,7 +65,13 @@ HEADERS += \
     src/oclint/OclintConstants.h \
     src/oclint/OclintOptionsPage.h \
     src/oclint/OclintOutputParser.h \
-    src/oclint/OclintRunner.h
+    src/oclint/OclintRunner.h \
+    src/ci/Ci.h \
+    src/ci/Drone.h \
+    src/ci/Model.h \
+    src/ci/Pane.h \
+    src/ci/ModelItem.h \
+    src/ci/NodeEdit.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
@@ -69,7 +81,8 @@ OTHER_FILES += \
     LICENSE.md \
     README.md \
     TODO.md \
-    util/README.md \
+    dist/README.md \
+    resources/README.md \
     uncrustify.cfg
 
 PROVIDER = Gres
