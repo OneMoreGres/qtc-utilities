@@ -311,7 +311,8 @@ void Node::updateRepository (ModelItem &repository, const ModelItem &build)
 {
   auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
   auto started = build.data (BuildFieldStarted).toDateTime ();
-  if (lastStarted < started) {
+  if (lastStarted <= started) {
+    repository.setData (RepoFieldStatus, build.data (BuildFieldStatus));
     repository.setData (RepoFieldLastBranch, build.data (BuildFieldBranch));
     repository.setData (RepoFieldLastAuthor, build.data (BuildFieldAuthor));
     repository.setData (RepoFieldLastMessage, build.data (BuildFieldMessage));
@@ -383,6 +384,7 @@ void Node::parseJob (const QJsonObject &object, ModelItem &job)
   auto status = job.data (JobFieldStatus).toString ();
   auto decoration = decorationForStatus (status);
   job.setDecoration (decoration);
+  emit updated (&job);
 }
 
 void Node::getLogs (ModelItem &job)
