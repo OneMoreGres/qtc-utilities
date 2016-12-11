@@ -21,6 +21,7 @@ class ModelItem
     ModelItem * child (int row) const;
     void prependChild (QSharedPointer<ModelItem> child);
     void addChild (QSharedPointer<ModelItem> child);
+    void removeAt (int row);
     int row () const;
     bool isEmpty () const;
     int rowCount () const;

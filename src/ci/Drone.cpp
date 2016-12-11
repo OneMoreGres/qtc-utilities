@@ -87,6 +87,9 @@ void Node::contextMenu (ModelItem *item)
   auto isNode = (level == 0);
   editAction->setEnabled (isNode);
 
+  auto *removeAction = menu.addAction (tr ("Remove"));
+  removeAction->setEnabled (isNode);
+
   auto *choice = menu.exec (QCursor::pos ());
 
   if (choice == getJobsAction) {
@@ -102,6 +105,14 @@ void Node::contextMenu (ModelItem *item)
     if (res == QDialog::Accepted && edit.mode () == NodeEdit::Mode::Drone) {
       setSettings (edit.drone ());
     }
+  }
+  if (choice == removeAction) {
+    auto row = this->row ();
+    if (row == -1) {
+      qCritical () << "wrong row to remove note";
+      return;
+    }
+    emit removeRequest (parent_, row);
   }
 }
 

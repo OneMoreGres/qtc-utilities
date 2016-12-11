@@ -40,6 +40,7 @@ class Model : public QAbstractItemModel
     void prepend (ModelItem *item);
     void add (ModelItem *item);
     void update (ModelItem *item);
+    void remove (ModelItem *parent, int row);
     void reset ();
 
   private:

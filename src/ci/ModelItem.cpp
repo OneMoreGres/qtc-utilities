@@ -90,6 +90,11 @@ void ModelItem::addChild (QSharedPointer<ModelItem> child)
   children_ << child;
 }
 
+void ModelItem::removeAt (int row)
+{
+  children_.removeAt (row);
+}
+
 QVariant ModelItem::data (int column, int role) const
 {
   if (role == Qt::DisplayRole && column < data_.size ()) {

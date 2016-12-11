@@ -135,6 +135,7 @@ void Model::addNode (const Drone::Settings &settings)
   connect (node.data (), &Drone::Node::prepended, this, &Model::prepend);
   connect (node.data (), &Drone::Node::updated, this, &Model::update);
   connect (node.data (), &Drone::Node::reset, this, &Model::reset);
+  connect (node.data (), &Drone::Node::removeRequest, this, &Model::remove);
   connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
   root_->addChild (node);
   endInsertRows ();
@@ -186,6 +187,14 @@ void Model::update (ModelItem *item)
 {
   auto left = index (item);
   emit dataChanged (left, left.sibling (left.row (), 1));
+}
+
+void Model::remove (ModelItem *parent, int row)
+{
+  auto parentIndex = index (parent);
+  beginRemoveRows (parentIndex, row, row);
+  parent->removeAt (row);
+  endRemoveRows ();
 }
 
 void Model::reset ()
