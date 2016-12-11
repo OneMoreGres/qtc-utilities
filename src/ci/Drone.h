@@ -17,7 +17,10 @@ struct Settings
   QUrl url;
   QByteArray user;
   QByteArray pass;
+  bool savePass;
 
+  QVariant toVariant ();
+  static Settings fromVariant (const QVariant &value);
   bool isValid () const;
 };
 

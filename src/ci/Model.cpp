@@ -2,6 +2,8 @@
 #include "Drone.h"
 #include "NodeEdit.h"
 
+#include <projectexplorer/session.h>
+
 #include <QAbstractItemView>
 #include <QMenu>
 
@@ -14,6 +16,11 @@ Model::Model (QObject *parent)
   : QAbstractItemModel (parent),
   root_ (new ModelItem (nullptr))
 {
+  using ProjectExplorer::SessionManager;
+  auto *session = SessionManager::instance ();
+  connect (session, &SessionManager::aboutToSaveSession, this, &Model::saveSession);
+  connect (session, &SessionManager::aboutToLoadSession, this, &Model::loadSession);
+
   header_ = QStringList {tr ("Name"), tr ("Status"), tr ("Started"), tr ("Finished"),
                          tr ("Branch"), tr ("Author"), tr ("Message")};
 }
@@ -101,27 +108,62 @@ void Model::contextMenu (const QPoint &point)
   auto index = view->indexAt (point);
   if (!index.isValid ()) {
     QMenu menu;
-    auto *addNode = menu.addAction (tr ("Add node"));
+    auto *addNodeAction = menu.addAction (tr ("Add node"));
 
     auto *choice = menu.exec (QCursor::pos ());
 
-    if (choice == addNode) {
+    if (choice == addNodeAction) {
       NodeEdit edit;
       auto res = edit.exec ();
       if (res == QDialog::Accepted) {
         if (edit.mode () == NodeEdit::Mode::Drone) {
-          auto node = QSharedPointer<Drone::Node>::create (*root_, edit.drone ());
-          connect (node.data (), &Drone::Node::added, this, &Model::add);
-          connect (node.data (), &Drone::Node::updated, this, &Model::update);
-          connect (node.data (), &Drone::Node::reset, this, &Model::reset);
-          connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
-          root_->addChild (node);
+          addNode (edit.drone ());
         }
       }
     }
     return;
   }
   emit requestContextMenu (item (index));
+}
+
+void Model::addNode (const Drone::Settings &settings)
+{
+  auto row = root_->rowCount ();
+  beginInsertRows ({}, row, row);
+  auto node = QSharedPointer<Drone::Node>::create (*root_, settings);
+  connect (node.data (), &Drone::Node::added, this, &Model::add);
+  connect (node.data (), &Drone::Node::updated, this, &Model::update);
+  connect (node.data (), &Drone::Node::reset, this, &Model::reset);
+  connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
+  root_->addChild (node);
+  endInsertRows ();
+}
+
+void Model::saveSession ()
+{
+  QVariantList settings;
+  for (auto child: root_->children ()) {
+    if (auto drone = child.dynamicCast<Drone::Node>()) {
+      settings << drone->settings ().toVariant ();
+    }
+  }
+  ProjectExplorer::SessionManager::setValue ("ci_settings", settings);
+}
+
+void Model::loadSession ()
+{
+  beginResetModel ();
+  root_->clear ();
+  auto settings = ProjectExplorer::SessionManager::value ("ci_settings").toList ();
+  for (const auto &i: settings) {
+    {
+      auto drone = Drone::Settings::fromVariant (i);
+      if (drone.isValid ()) {
+        addNode (drone);
+      }
+    }
+  }
+  endResetModel ();
 }
 
 void Model::add (ModelItem *item)
@@ -136,6 +178,12 @@ void Model::update (ModelItem *item)
 {
   auto left = index (item);
   emit dataChanged (left, left.sibling (left.row (), 1));
+}
+
+void Model::reset ()
+{
+  beginResetModel ();
+  endResetModel ();
 }
 
 } // namespace Ci

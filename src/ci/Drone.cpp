@@ -420,7 +420,7 @@ void Node::setSettings (const Settings &settings)
   settings_ = settings;
   setData (NodeFieldUrl, settings_.url);
   setData (NodeFieldUser, settings_.user);
-  children_.clear ();
+  clear ();
   pendingReplies_.clear ();
 
   auto *cookies = manager_->cookieJar ();
@@ -434,6 +434,20 @@ void Node::setSettings (const Settings &settings)
   }
 
   emit reset ();
+}
+
+QVariant Settings::toVariant ()
+{
+  return QVariantList {"drone", url, user, (savePass ? pass : QByteArray ()), savePass};
+}
+
+Settings Settings::fromVariant (const QVariant &value)
+{
+  auto list = value.toList ();
+  if (list[0] != "drone" || list.size () < 5) {
+    return {};
+  }
+  return {list[1].toUrl (), list[2].toByteArray (), list[3].toByteArray (), list[4].toBool ()};
 }
 
 bool Settings::isValid () const

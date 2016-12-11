@@ -44,12 +44,14 @@ void NodeEdit::setDrone (Drone::Settings &drone)
   url_->setText (drone.url.toString ());
   user_->setText (QString::fromUtf8 (drone.user));
   pass_->setText (QString::fromUtf8 (drone.pass));
+  savePass_->setChecked (drone.savePass);
 }
 
 Drone::Settings NodeEdit::drone () const
 {
   if (mode_ == Mode::Drone) {
-    return {QUrl (url_->text ()), user_->text ().toUtf8 (), pass_->text ().toUtf8 ()};
+    return {QUrl (url_->text ()), user_->text ().toUtf8 (), pass_->text ().toUtf8 (),
+            savePass_->isChecked ()};
   }
   return {};
 }

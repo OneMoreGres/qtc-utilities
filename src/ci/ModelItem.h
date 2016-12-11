@@ -23,6 +23,7 @@ class ModelItem
     int row () const;
     int rowCount () const;
     int columnCount () const;
+    void clear ();
 
     Decoration decoration () const;
     void setDecoration (Decoration decoration);

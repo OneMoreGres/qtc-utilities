@@ -6,6 +6,10 @@ namespace QtcUtilities {
 namespace Internal {
 namespace Ci {
 
+namespace Drone {
+struct Settings;
+}
+
 class ModelItem;
 
 class Model : public QAbstractItemModel
@@ -29,6 +33,8 @@ class Model : public QAbstractItemModel
 
   public slots:
     void contextMenu (const QPoint &point);
+    void saveSession ();
+    void loadSession ();
 
   private slots:
     void add (ModelItem *item);
@@ -38,6 +44,7 @@ class Model : public QAbstractItemModel
   private:
     QModelIndex index (ModelItem *item, int column = 0) const;
     ModelItem * item (const QModelIndex &index) const;
+    void addNode (const Drone::Settings &settings);
 
     QScopedPointer<ModelItem> root_;
     QStringList header_;

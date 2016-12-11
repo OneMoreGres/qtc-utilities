@@ -52,6 +52,11 @@ int ModelItem::columnCount () const
   return data_.size ();
 }
 
+void ModelItem::clear ()
+{
+  children_.clear ();
+}
+
 void ModelItem::setData (int column, const QVariant &data)
 {
   for (auto i = column - data_.size (); i >= 0; --i) {
