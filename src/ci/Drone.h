@@ -38,6 +38,7 @@ class Node : public QObject, public ModelItem
 
   signals:
     void updated (ModelItem *item);
+    void prepended (ModelItem *item);
     void added (ModelItem *item);
     void reset ();
 

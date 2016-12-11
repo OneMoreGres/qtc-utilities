@@ -29,6 +29,11 @@ ModelItem * ModelItem::child (int row) const
   return nullptr;
 }
 
+void ModelItem::prependChild (QSharedPointer<ModelItem> child)
+{
+  children_.prepend (child);
+}
+
 int ModelItem::row () const
 {
   if (parent_) {
@@ -40,6 +45,11 @@ int ModelItem::row () const
     }
   }
   return -1;
+}
+
+bool ModelItem::isEmpty () const
+{
+  return children_.isEmpty ();
 }
 
 int ModelItem::rowCount () const

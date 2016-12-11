@@ -265,6 +265,7 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
     qCritical () << "wrong builds list format" << reply;
     return;
   }
+  auto isFirstUpdate = repository.isEmpty ();
   for (QJsonValueRef value: doc.array ()) {
     auto object = value.toObject ();
     auto number = object["number"].toInt ();
@@ -287,8 +288,14 @@ void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
 
     auto build = QSharedPointer<ModelItem>::create (&repository);
     parseBuild (object, *build);
-    repository.addChild (build);
-    emit added (build.data ());
+    if (isFirstUpdate) {
+      repository.addChild (build);
+      emit added (build.data ());
+    }
+    else { // to preserve build order (descending by number)
+      repository.prependChild (build);
+      emit prepended (build.data ());
+    }
   }
 }
 

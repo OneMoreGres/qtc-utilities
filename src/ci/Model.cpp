@@ -132,6 +132,7 @@ void Model::addNode (const Drone::Settings &settings)
   beginInsertRows ({}, row, row);
   auto node = QSharedPointer<Drone::Node>::create (*root_, settings);
   connect (node.data (), &Drone::Node::added, this, &Model::add);
+  connect (node.data (), &Drone::Node::prepended, this, &Model::prepend);
   connect (node.data (), &Drone::Node::updated, this, &Model::update);
   connect (node.data (), &Drone::Node::reset, this, &Model::reset);
   connect (this, &Model::requestContextMenu, node.data (), &Drone::Node::contextMenu);
@@ -164,6 +165,13 @@ void Model::loadSession ()
     }
   }
   endResetModel ();
+}
+
+void Model::prepend (ModelItem *item)
+{
+  auto parentIndex = parent (index (item));
+  beginInsertRows (parentIndex, 0, 0);
+  endInsertRows ();
 }
 
 void Model::add (ModelItem *item)

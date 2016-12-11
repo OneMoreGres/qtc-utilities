@@ -19,8 +19,10 @@ class ModelItem
 
     ModelItem * parent () const;
     ModelItem * child (int row) const;
+    void prependChild (QSharedPointer<ModelItem> child);
     void addChild (QSharedPointer<ModelItem> child);
     int row () const;
+    bool isEmpty () const;
     int rowCount () const;
     int columnCount () const;
     void clear ();

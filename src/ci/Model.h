@@ -37,6 +37,7 @@ class Model : public QAbstractItemModel
     void loadSession ();
 
   private slots:
+    void prepend (ModelItem *item);
     void add (ModelItem *item);
     void update (ModelItem *item);
     void reset ();
