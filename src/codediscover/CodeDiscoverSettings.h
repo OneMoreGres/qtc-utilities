@@ -21,6 +21,7 @@ enum ClassFlags {
   ShowOnlyHierarchyDependencies = 1 << 10,
   ShowNested = 1 << 11,
   ShowDetailsFromSameProject = 1 << 12,
+  ShowSameProjectSymbols = 1 << 13,
 
   ShowAll = ShowMembers | ShowMethods | ShowPublic | ShowProtected | ShowPrivate
             | ShowBase | ShowDerived | ShowDependencies | ShowDependsDetails

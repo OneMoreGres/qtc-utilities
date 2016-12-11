@@ -32,6 +32,7 @@ CodeDiscoverWindow::CodeDiscoverWindow (ClassFlags flags, QWidget *parent,
   ADD_CHECKBOX (ShowHierarchyDetails, "Show base and derived details");
   ADD_CHECKBOX (ShowDetailsFromSameProject, "Show same project symbols details");
   ADD_CHECKBOX (ShowNested, "Show nested classes");
+  ADD_CHECKBOX (ShowSameProjectSymbols, "Show only same project symbols");
 #undef ADD_CHECKBOX
   flagsLayout->addStretch (1);
   auto saveButton = new QPushButton (tr ("Save to file..."));

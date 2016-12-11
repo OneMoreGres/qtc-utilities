@@ -215,6 +215,10 @@ void Generator::processHierarchy (const TypeHierarchy &hierarchy)
 
 void Generator::processClass (const Class *c, const QList<TypeHierarchy> &hierarchy)
 {
+  if (flags_ & ShowSameProjectSymbols && !fromSameProject (c)) {
+    return;
+  }
+
   classes_ << classView (c);
 
   if (flags_ & ShowBase) {
@@ -403,6 +407,9 @@ void Generator::processDependency (const QString &dependency, Class *dependant,
     return;
   }
   if (auto *d = find (dependency, scope)) {
+    if (flags_ & ShowSameProjectSymbols && !fromSameProject (d)) {
+      return;
+    }
     processHierarchy (d);
     relations_ << relation (d, Dependency, dependant);
   }
