@@ -133,6 +133,7 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
   toe_.init (document, snapshot_);
   auto items = toe_ (name.toUtf8 (), scope);
   Symbol *forward = nullptr;
+  Symbol *typedefMatch = nullptr;
   for (auto item: items) {
     if (auto *d = item.declaration ()) {
       if (auto *t = d->asTemplate ()) {
@@ -140,6 +141,9 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
       }
       if (isClassLike (d)) {
         return d;
+      }
+      if (d->isTypedef ()) {
+        typedefMatch = d;
       }
       if (!forward && o_ (d->name ()) == name) {
         forward = d->asForwardClassDeclaration ();
@@ -151,6 +155,9 @@ Symbol * Generator::find (const QString &name, Symbol *baseScope) const
     if (d && isClassLike (d)) {
       return d;
     }
+  }
+  if (typedefMatch) {
+    return typedefMatch;
   }
   return nullptr;
 }
