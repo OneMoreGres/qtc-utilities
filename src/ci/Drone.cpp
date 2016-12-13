@@ -355,7 +355,12 @@ void Node::updateRepository (ModelItem &repository, const ModelItem &build)
     }
     else if (decoration != Decoration::Running && decoration != Decoration::Pending
              && futureInterface_) {
-      futureInterface_->reportFinished ();
+      if (decoration == Decoration::Success) {
+        futureInterface_->reportFinished ();
+      }
+      else {
+        futureInterface_->reportCanceled ();
+      }
       delete futureInterface_;
       futureInterface_ = nullptr;
     }
