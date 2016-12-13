@@ -26,6 +26,7 @@ NodeEdit::NodeEdit (QWidget *parent)
 
   ++row;
   layout->addWidget (new QLabel (tr ("Password")), row, 0);
+  pass_->setEchoMode (QLineEdit::Password);
   layout->addWidget (pass_, row, 1);
 
   ++row;
