@@ -7,7 +7,6 @@
 
 #include <coreplugin/outputwindow.h>
 #include <coreplugin/find/basetextfind.h>
-#include <coreplugin/coreicons.h>
 
 #include <texteditor/fontsettings.h>
 #include <texteditor/texteditorsettings.h>
@@ -16,6 +15,7 @@
 #include <extensionsystem/pluginmanager.h>
 
 #include <utils/outputformatter.h>
+#include <utils/utilsicons.h>
 
 
 #include <QDockWidget>
@@ -121,7 +121,7 @@ DockedOutputPane::DockedOutputPane ()
 {
   isEnabledButton_->setCheckable (true);
   isEnabledButton_->setChecked (isEnabled_);
-  isEnabledButton_->setIcon (Core::Icons::RUN_SMALL.icon ());
+  isEnabledButton_->setIcon (Utils::Icons::RUN_SMALL.icon ());
   isEnabledButton_->setToolTip (tr ("Enabled"));
   connect (isEnabledButton_, &QToolButton::toggled,
            this, &DockedOutputPane::setIsEnabled);

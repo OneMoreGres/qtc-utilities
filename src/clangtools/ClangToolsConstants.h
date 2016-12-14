@@ -4,16 +4,16 @@ namespace QtcUtilities {
 namespace Internal {
 namespace ClangTools {
 
-const auto ACTION_CHECK_NODE_ID = "ClangTools.ActionCheckNodeId";
+const char ACTION_CHECK_NODE_ID[] = "ClangTools.ActionCheckNodeId";
 
-const auto OPTIONS_PAGE_ID = "ClangTools.OptionaPageId";
-const auto OPTIONS_CATEGORY_ID = "QtcUtilities.CategoryId";
-const auto OPTIONS_CATEGORY_ICON = ":/resources/section.png";
+const char OPTIONS_PAGE_ID[] = "ClangTools.OptionaPageId";
+const char OPTIONS_CATEGORY_ID[] = "QtcUtilities.CategoryId";
+const char OPTIONS_CATEGORY_ICON[] = ":/resources/section.png";
 
-const auto TASK_CATEGORY_ID = "ClangTools.TaskCategoryId";
-const auto TASK_CATEGORY_NAME = "ClangTools";
+const char TASK_CATEGORY_ID[] = "ClangTools.TaskCategoryId";
+const char TASK_CATEGORY_NAME[] = "ClangTools";
 
-const auto TASK_CHECKING = "ClangTools.CheckingTask";
+const char TASK_CHECKING[] = "ClangTools.CheckingTask";
 
 } // namespace ClangTools
 } // namespace Internal

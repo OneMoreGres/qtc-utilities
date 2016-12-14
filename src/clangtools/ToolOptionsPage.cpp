@@ -199,7 +199,7 @@ ToolOptionsPage::ToolOptionsPage ()
   setDisplayName (tr ("Clang tools"));
   setCategory (OPTIONS_CATEGORY_ID);
   setDisplayCategory (tr ("Utilities"));
-  setCategoryIcon (QLatin1String (OPTIONS_CATEGORY_ICON));
+  setCategoryIcon (Utils::Icon (OPTIONS_CATEGORY_ICON));
 
   load ();
 }

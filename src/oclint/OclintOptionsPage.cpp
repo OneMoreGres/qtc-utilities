@@ -109,7 +109,7 @@ void OclintOptionsWidget::get (OclintRunnerSettings &settings) const
 {
   settings.binary = binary_->text ();
   settings.arguments = arguments_->text ();
-  for (auto & i: settings.extensions) {
+  for (auto &i: settings.extensions) {
     i = i.trimmed ();
   }
   settings.checkTypes = QList<int> () << ClangTools::CheckManual;
@@ -175,7 +175,7 @@ OclintOptionsPage::OclintOptionsPage ()
   setDisplayName (tr ("OCLint"));
   setCategory (OPTIONS_CATEGORY_ID);
   setDisplayCategory (tr ("Utilities"));
-  setCategoryIcon (QLatin1String (OPTIONS_CATEGORY_ICON));
+  setCategoryIcon (Utils::Icon (OPTIONS_CATEGORY_ICON));
 
   load ();
 }
@@ -216,7 +216,7 @@ void OclintOptionsPage::load ()
   settings_.extensions = QStringList () << "cpp" << "c" << "cxx" << "c++";
   auto types = qsettings.value (SETTINGS_CHECKTYPES).toString ().split (QLatin1String (","));
   settings_.checkTypes = QList<int> () << ClangTools::CheckManual;
-  for (const auto & type: types) {
+  for (const auto &type: types) {
     settings_.checkTypes << type.toInt ();
   }
   qsettings.endGroup ();
