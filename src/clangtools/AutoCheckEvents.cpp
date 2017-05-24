@@ -117,9 +117,13 @@ QStringList AutoCheckEvents::getDocuments (int beginRow, int endRow, bool isModi
 
 QStringList AutoCheckEvents::getFiles (const Node *node) const
 {
+  if (!node) {
+    return {};
+  }
+
   QStringList files;
   switch (node->nodeType ()) {
-    case FileNodeType:
+    case NodeType::File:
       {
         const auto file = static_cast<const FileNode *>(node);
         if (file->isGenerated ()) {
@@ -129,12 +133,12 @@ QStringList AutoCheckEvents::getFiles (const Node *node) const
       }
       break;
 
-    case ProjectNodeType:
-    case FolderNodeType:
-    case VirtualFolderNodeType:
+    case NodeType::Project:
+    case NodeType::Folder:
+    case NodeType::VirtualFolder:
       {
         const FolderNode *folder = static_cast<const FolderNode *> (node);
-        for (const auto subfolder: folder->subFolderNodes ()) {
+        for (const auto subfolder: folder->folderNodes ()) {
           files += getFiles (subfolder);
         }
         for (const auto file: folder->fileNodes ()) {
