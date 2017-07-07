@@ -3,37 +3,36 @@
 #include <QPointer>
 
 namespace ExtensionSystem {
-class IPlugin;
+  class IPlugin;
 }
 
 namespace QtcUtilities {
-namespace Internal {
-namespace OrganizeIncludes {
+  namespace Internal {
+    namespace OrganizeIncludes {
 
-class IncludesOptionsPage;
+      class IncludesOptionsPage;
 
-class IncludesOrganizer : public QObject
-{
-  Q_OBJECT
+      class IncludesOrganizer : public QObject {
+        Q_OBJECT
 
-  public:
-    explicit IncludesOrganizer (ExtensionSystem::IPlugin *plugin);
+        public:
+          explicit IncludesOrganizer (ExtensionSystem::IPlugin *plugin);
 
-  public slots:
-    void organize ();
-    void sort ();
-    void add ();
-    void remove ();
-    void resolve ();
-    void rename ();
+        public slots:
+          void organize ();
+          void sort ();
+          void add ();
+          void remove ();
+          void resolve ();
+          void rename ();
 
-  private:
-    void registerActions ();
-    void applyActions (int actions) const;
+        private:
+          void registerActions ();
+          void applyActions (int actions) const;
 
-    QPointer <IncludesOptionsPage> options_;
-};
+          QPointer <IncludesOptionsPage> options_;
+      };
 
-} // namespace OrganizeIncludes
-} // namespace Internal
+    } // namespace OrganizeIncludes
+  } // namespace Internal
 } // namespace QtcUtilities

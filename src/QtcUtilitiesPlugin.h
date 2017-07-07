@@ -5,24 +5,23 @@
 #include <extensionsystem/iplugin.h>
 
 namespace QtcUtilities {
-namespace Internal {
+  namespace Internal {
 
-class QtcUtilitiesPlugin : public ExtensionSystem::IPlugin
-{
-  Q_PLUGIN_METADATA (IID "org.qt-project.Qt.QtCreatorPlugin" FILE "QtcUtilities.json")
-  Q_OBJECT
+    class QtcUtilitiesPlugin : public ExtensionSystem::IPlugin {
+      Q_PLUGIN_METADATA (IID "org.qt-project.Qt.QtCreatorPlugin" FILE "QtcUtilities.json")
+      Q_OBJECT
 
-  public:
-    QtcUtilitiesPlugin ();
-    ~QtcUtilitiesPlugin ();
+      public:
+        QtcUtilitiesPlugin ();
+        ~QtcUtilitiesPlugin ();
 
-    bool initialize (const QStringList &arguments, QString *errorString);
-    void extensionsInitialized ();
-    ShutdownFlag aboutToShutdown ();
+        bool initialize (const QStringList &arguments, QString *errorString);
+        void extensionsInitialized ();
+        ShutdownFlag aboutToShutdown ();
 
-  private:
-    void initTranslation ();
-};
+      private:
+        void initTranslation ();
+    };
 
-}   // namespace Internal
+  } // namespace Internal
 } // namespace QtcUtilities

@@ -2,91 +2,75 @@
 #include "Model.h"
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Ci {
+  namespace Internal {
+    namespace Ci {
 
-Pane::Pane ()
-  : widget_ (new QTreeView), model_ (new Model (this))
-{
-  widget_->setModel (model_);
-  widget_->setEditTriggers (QAbstractItemView::NoEditTriggers);
-  widget_->setContextMenuPolicy (Qt::CustomContextMenu);
-  connect (widget_, &QTreeView::customContextMenuRequested,
-           model_, &Model::contextMenu);
-}
+      Pane::Pane ()
+        : widget_ (new QTreeView), model_ (new Model (this)) {
+        widget_->setModel (model_);
+        widget_->setEditTriggers (QAbstractItemView::NoEditTriggers);
+        widget_->setContextMenuPolicy (Qt::CustomContextMenu);
+        connect (widget_, &QTreeView::customContextMenuRequested,
+                 model_, &Model::contextMenu);
+      }
 
-Pane::~Pane ()
-{
-  delete widget_;
-}
+      Pane::~Pane () {
+        delete widget_;
+      }
 
-QWidget * Pane::outputWidget (QWidget */*parent*/)
-{
-  return widget_;
-}
+      QWidget *Pane::outputWidget (QWidget */*parent*/) {
+        return widget_;
+      }
 
-QList<QWidget *> Pane::toolBarWidgets () const
-{
-  return {};
-}
+      QList<QWidget *> Pane::toolBarWidgets () const {
+        return {};
+      }
 
-QString Pane::displayName () const
-{
-  return tr ("Continuous integration");
-}
+      QString Pane::displayName () const {
+        return tr ("Continuous integration");
+      }
 
-int Pane::priorityInStatusBar () const
-{
-  return 30;
-}
+      int Pane::priorityInStatusBar () const {
+        return 30;
+      }
 
-void Pane::clearContents ()
-{
-}
+      void Pane::clearContents () {
+      }
 
-void Pane::visibilityChanged (bool visible)
-{
-  widget_->setVisible (visible);
-}
+      void Pane::visibilityChanged (bool visible) {
+        widget_->setVisible (visible);
+      }
 
-void Pane::setFocus ()
-{
-  widget_->setFocus ();
-}
+      void Pane::setFocus () {
+        widget_->setFocus ();
+      }
 
-bool Pane::hasFocus () const
-{
-  return widget_->hasFocus ();
-}
+      bool Pane::hasFocus () const {
+        return widget_->hasFocus ();
+      }
 
-bool Pane::canFocus () const
-{
-  return true;
-}
+      bool Pane::canFocus () const {
+        return true;
+      }
 
-bool Pane::canNavigate () const
-{
-  return false;
-}
+      bool Pane::canNavigate () const {
+        return false;
+      }
 
-bool Pane::canNext () const
-{
-  return false;
-}
+      bool Pane::canNext () const {
+        return false;
+      }
 
-bool Pane::canPrevious () const
-{
-  return false;
-}
+      bool Pane::canPrevious () const {
+        return false;
+      }
 
-void Pane::goToNext ()
-{
-}
+      void Pane::goToNext () {
+      }
 
-void Pane::goToPrev ()
-{
-}
+      void Pane::goToPrev () {
+      }
 
-} // namespace Ci
-} // namespace Internal
+    } // namespace Ci
+  } // namespace Internal
 } // namespace QtcUtilities

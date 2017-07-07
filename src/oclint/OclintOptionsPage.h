@@ -8,39 +8,38 @@
 #include <QMap>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Oclint {
+  namespace Internal {
+    namespace Oclint {
 
-class OptionsWidget;
+      class OptionsWidget;
 
-class OclintOptionsPage : public Core::IOptionsPage
-{
-  Q_OBJECT
+      class OclintOptionsPage : public Core::IOptionsPage {
+        Q_OBJECT
 
-  public:
-    using Settings = OclintRunnerSettings;
+        public:
+          using Settings = OclintRunnerSettings;
 
-    OclintOptionsPage ();
+          OclintOptionsPage ();
 
-    QWidget * widget () override;
-    void apply () override;
-    void finish () override;
+          QWidget *widget () override;
+          void apply () override;
+          void finish () override;
 
-    const Settings &settings () const;
+          const Settings &settings () const;
 
-  signals:
-    void settingsSaved ();
+        signals:
+          void settingsSaved ();
 
-  private:
-    void load ();
-    void save ();
+        private:
+          void load ();
+          void save ();
 
-    QPointer<OptionsWidget> widget_;
-    Settings settings_;
+          QPointer<OptionsWidget> widget_;
+          Settings settings_;
 
-    Q_DISABLE_COPY (OclintOptionsPage)
-};
+          Q_DISABLE_COPY (OclintOptionsPage)
+      };
 
-} // namespace Oclint
-} // namespace Internal
+    } // namespace Oclint
+  } // namespace Internal
 } // namespace QtcUtilities

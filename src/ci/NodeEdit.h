@@ -5,42 +5,41 @@
 #include <QLineEdit>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Ci {
+  namespace Internal {
+    namespace Ci {
 
-namespace Drone {
-class Settings;
-}
+      namespace Drone {
+        class Settings;
+      }
 
-class ModelItem;
+      class ModelItem;
 
-class NodeEdit : public QDialog
-{
-  Q_OBJECT
+      class NodeEdit : public QDialog {
+        Q_OBJECT
 
-  public:
-    explicit NodeEdit (QWidget *parent = 0);
+        public:
+          explicit NodeEdit (QWidget *parent = 0);
 
-    void setDrone (Drone::Settings &drone);
-    Drone::Settings drone () const;
+          void setDrone (Drone::Settings &drone);
+          Drone::Settings drone () const;
 
-    enum class Mode {
-      Drone
-    };
-    Mode mode () const;
-    void setMode (Mode mode);
+          enum class Mode {
+            Drone
+          };
+          Mode mode () const;
+          void setMode (Mode mode);
 
-    bool savePass () const;
+          bool savePass () const;
 
-  private:
-    Mode mode_;
+        private:
+          Mode mode_;
 
-    QLineEdit *url_;
-    QLineEdit *user_;
-    QLineEdit *pass_;
-    QCheckBox *savePass_;
-};
+          QLineEdit *url_;
+          QLineEdit *user_;
+          QLineEdit *pass_;
+          QCheckBox *savePass_;
+      };
 
-} // namespace Ci
-} // namespace Internal
+    } // namespace Ci
+  } // namespace Internal
 } // namespace QtcUtilities

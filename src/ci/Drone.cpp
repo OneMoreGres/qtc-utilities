@@ -15,495 +15,473 @@
 
 namespace {
 
-enum class RequestType {
-  Login, GetRepositories, GetBuilds, GetJobs, GetLogs
-};
-enum class Attribute {
-  RequestType = QNetworkRequest::User,
-  Context
-};
+  enum class RequestType {
+    Login, GetRepositories, GetBuilds, GetJobs, GetLogs
+  };
+  enum class Attribute {
+    RequestType = QNetworkRequest::User,
+    Context
+  };
 
-enum NodeField {
-  NodeFieldUrl, NodeFieldUser
-};
-enum RepoField {
-  RepoFieldName, RepoFieldStatus, RepoFieldLastStarted, RepoFieldLastFinished,
-  RepoFieldLastBranch, RepoFieldLastAuthor, RepoFieldLastMessage
-};
-enum BuildField {
-  BuildFieldNumber, BuildFieldStatus, BuildFieldStarted, BuildFieldFinished,
-  BuildFieldBranch, BuildFieldAuthor, BuildFieldMessage
-};
-enum JobField {
-  JobFieldNumber, JobFieldStatus, JobFieldStarted, JobFieldFinished
-};
+  enum NodeField {
+    NodeFieldUrl, NodeFieldUser
+  };
+  enum RepoField {
+    RepoFieldName, RepoFieldStatus, RepoFieldLastStarted, RepoFieldLastFinished,
+    RepoFieldLastBranch, RepoFieldLastAuthor, RepoFieldLastMessage
+  };
+  enum BuildField {
+    BuildFieldNumber, BuildFieldStatus, BuildFieldStarted, BuildFieldFinished,
+    BuildFieldBranch, BuildFieldAuthor, BuildFieldMessage
+  };
+  enum JobField {
+    JobFieldNumber, JobFieldStatus, JobFieldStarted, JobFieldFinished
+  };
 
 
 }
 Q_DECLARE_METATYPE (RequestType)
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Ci {
-namespace Drone {
+  namespace Internal {
+    namespace Ci {
+      namespace Drone {
 
 
-Node::Node (ModelItem &parent, const Settings &settings)
-  : ModelItem (&parent),
-  settings_ (settings), manager_ (new QNetworkAccessManager (this)),
-  futureInterface_ (nullptr)
-{
-  connect (manager_, &QNetworkAccessManager::finished,
-           this, &Node::replyFinished);
+        Node::Node (ModelItem &parent, const Settings &settings)
+          : ModelItem (&parent),
+          settings_ (settings), manager_ (new QNetworkAccessManager (this)),
+          futureInterface_ (nullptr) {
+          connect (manager_, &QNetworkAccessManager::finished,
+                   this, &Node::replyFinished);
 
-  setSettings (settings);
+          setSettings (settings);
 
-  startTimer (3000);
-}
-
-Node::~Node ()
-{
-  delete futureInterface_;
-}
-
-void Node::contextMenu (ModelItem *item)
-{
-  auto level = levelInTree (item);
-  if (level == -1) {
-    return;
-  }
-
-  QMenu menu;
-
-  auto isBuild = (level == 2);
-  auto *getJobsAction = menu.addAction (tr ("Get jobs"));
-  getJobsAction->setEnabled (isBuild);
-
-  auto *getLogsAction = menu.addAction (tr ("Get logs"));
-  auto isJob = (level == 3);
-  getLogsAction->setEnabled (isJob);
-
-  auto *editAction = menu.addAction (tr ("Edit"));
-  auto isNode = (level == 0);
-  editAction->setEnabled (isNode);
-
-  auto *removeAction = menu.addAction (tr ("Remove"));
-  removeAction->setEnabled (isNode);
-
-  auto *choice = menu.exec (QCursor::pos ());
-
-  if (choice == getJobsAction) {
-    getJobs (*item);
-  }
-  if (choice == getLogsAction) {
-    getLogs (*item);
-  }
-  if (choice == editAction) {
-    NodeEdit edit;
-    edit.setDrone (settings_);
-    auto res = edit.exec ();
-    if (res == QDialog::Accepted && edit.mode () == NodeEdit::Mode::Drone) {
-      setSettings (edit.drone ());
-    }
-  }
-  if (choice == removeAction) {
-    auto row = this->row ();
-    if (row == -1) {
-      qCritical () << "wrong row to remove note";
-      return;
-    }
-    emit removeRequest (parent_, row);
-  }
-}
-
-void Node::timerEvent (QTimerEvent */*e*/)
-{
-  if (!pendingReplies_.isEmpty () || !settings_.isValid ()) {
-    return;
-  }
-
-  for (auto repo: children_) {
-    getBuilds (*repo);
-  }
-
-}
-
-void Node::replyFinished (QNetworkReply *reply)
-{
-  if (!pendingReplies_.contains (reply)) {
-    reply->deleteLater ();
-    return;
-  }
-  pendingReplies_.removeAll (reply);
-
-  auto request = reply->request ();
-  auto requestType = request.attribute (QNetworkRequest::Attribute (Attribute::RequestType))
-                     .value<RequestType>();
-
-  if (reply->error () != QNetworkReply::NoError) {
-    qCritical () << "reply error" << reply->errorString () << int (reply->error ())
-                 << "on url" << request.url ();
-    reply->deleteLater ();
-    return;
-  }
-
-  switch (requestType) {
-    case RequestType::Login:
-      getReposotories ();
-      break;
-
-    case RequestType::GetRepositories:
-      parseRepositories (reply->readAll ());
-      break;
-
-    case RequestType::GetBuilds:
-      {
-        auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
-        auto *repository = context.value <ModelItem *> ();
-        if (!repository) {
-          qCritical () << "repository item is empty";
-          break;
+          startTimer (3000);
         }
-        parseBuilds (reply->readAll (), *repository);
-      }
-      break;
 
-    case RequestType::GetJobs:
-      {
-        auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
-        auto *build = context.value <ModelItem *> ();
-        if (!build) {
-          qCritical () << "build item is empty";
-          break;
+        Node::~Node () {
+          delete futureInterface_;
         }
-        parseJobs (reply->readAll (), *build);
-      }
-      break;
 
-    case RequestType::GetLogs:
-      {
-        auto log = reply->readAll ();
-        if (!log.isEmpty ()) {
-          QString msg = ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" + QString::fromUtf8 (log)
-                        + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
-          Core::MessageManager::write (msg, Core::MessageManager::WithFocus);
+        void Node::contextMenu (ModelItem *item) {
+          auto level = levelInTree (item);
+          if (level == -1) {
+            return;
+          }
+
+          QMenu menu;
+
+          auto isBuild = (level == 2);
+          auto *getJobsAction = menu.addAction (tr ("Get jobs"));
+          getJobsAction->setEnabled (isBuild);
+
+          auto *getLogsAction = menu.addAction (tr ("Get logs"));
+          auto isJob = (level == 3);
+          getLogsAction->setEnabled (isJob);
+
+          auto *editAction = menu.addAction (tr ("Edit"));
+          auto isNode = (level == 0);
+          editAction->setEnabled (isNode);
+
+          auto *removeAction = menu.addAction (tr ("Remove"));
+          removeAction->setEnabled (isNode);
+
+          auto *choice = menu.exec (QCursor::pos ());
+
+          if (choice == getJobsAction) {
+            getJobs (*item);
+          }
+          if (choice == getLogsAction) {
+            getLogs (*item);
+          }
+          if (choice == editAction) {
+            NodeEdit edit;
+            edit.setDrone (settings_);
+            auto res = edit.exec ();
+            if (res == QDialog::Accepted && edit.mode () == NodeEdit::Mode::Drone) {
+              setSettings (edit.drone ());
+            }
+          }
+          if (choice == removeAction) {
+            auto row = this->row ();
+            if (row == -1) {
+              qCritical () << "wrong row to remove note";
+              return;
+            }
+            emit removeRequest (parent_, row);
+          }
         }
-      }
-      break;
 
-    default:
-      Q_ASSERT_X (false, "request", "unhandled request type");
-  }
+        void Node::timerEvent (QTimerEvent */*e*/) {
+          if (!pendingReplies_.isEmpty () || !settings_.isValid ()) {
+            return;
+          }
 
-  reply->deleteLater ();
-}
+          for (auto repo: children_) {
+            getBuilds (*repo);
+          }
 
-void Node::login ()
-{
-  auto *multiPart = new QHttpMultiPart (QHttpMultiPart::FormDataType);
-  QHttpPart user;
-  user.setHeader (QNetworkRequest::ContentDispositionHeader,
-                  QVariant ("form-data; name=\"username\""));
-  user.setBody (settings_.user);
-  multiPart->append (user);
-
-  QHttpPart pass;
-  pass.setHeader (QNetworkRequest::ContentDispositionHeader,
-                  QVariant ("form-data; name=\"password\""));
-  pass.setBody (settings_.pass);
-  multiPart->append (pass);
-
-  auto url = settings_.url;
-  url.setPath ("/authorize");
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::Login));
-
-  QNetworkReply *reply = manager_->post (request, multiPart);
-  multiPart->setParent (reply);
-  pendingReplies_ << reply;
-}
-
-void Node::getReposotories ()
-{
-  auto url = settings_.url;
-  url.setPath ("/api/user/repos");
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::GetRepositories));
-
-  pendingReplies_ << manager_->get (request);
-}
-
-void Node::parseRepositories (const QByteArray &reply)
-{
-  auto doc = QJsonDocument::fromJson (reply);
-  if (!doc.isArray ()) {
-    qCritical () << "wrong repositories list format" << reply;
-    return;
-  }
-  for (QJsonValueRef value: doc.array ()) {
-    auto repo = QSharedPointer<ModelItem>::create (this);
-
-    auto object = value.toObject ();
-    auto name = object["full_name"].toString ();
-    repo->setData (RepoFieldName, name);
-
-    children_ << repo;
-    emit added (repo.data ());
-
-    getBuilds (*repo);
-  }
-}
-
-void Node::getBuilds (ModelItem &repository)
-{
-  auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
-  url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/builds");
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::GetBuilds));
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
-                        QVariant::fromValue (&repository));
-
-  pendingReplies_ << manager_->get (request);
-}
-
-void Node::parseBuilds (const QByteArray &reply, ModelItem &repository)
-{
-  auto doc = QJsonDocument::fromJson (reply);
-  if (!doc.isArray ()) {
-    qCritical () << "wrong builds list format" << reply;
-    return;
-  }
-  auto isFirstUpdate = repository.isEmpty ();
-  for (QJsonValueRef value: doc.array ()) {
-    auto object = value.toObject ();
-    auto number = object["number"].toInt ();
-
-    auto found = false;
-    for (auto build: repository.children ()) {
-      if (number == build->data (BuildFieldNumber).toInt ()) {
-        if (build->decoration () == Decoration::Running) {
-          parseBuild (object, *build);
-          updateRepository (repository, *build);
         }
-        found = true;
-        break;
-      }
-    }
 
-    if (found) {
-      continue;
-    }
+        void Node::replyFinished (QNetworkReply *reply) {
+          if (!pendingReplies_.contains (reply)) {
+            reply->deleteLater ();
+            return;
+          }
+          pendingReplies_.removeAll (reply);
 
-    auto build = QSharedPointer<ModelItem>::create (&repository);
-    parseBuild (object, *build);
-    if (isFirstUpdate) {
-      repository.addChild (build);
-      emit added (build.data ());
-    }
-    else { // to preserve build order (descending by number)
-      repository.prependChild (build);
-      emit prepended (build.data ());
-    }
-  }
-}
+          auto request = reply->request ();
+          auto requestType = request.attribute (QNetworkRequest::Attribute (Attribute::RequestType))
+                             .value<RequestType>();
 
-void Node::parseBuild (const QJsonObject &object, ModelItem &build)
-{
-  build.setData (BuildFieldNumber, object["number"].toInt ());
-  build.setData (BuildFieldStatus, object["status"].toString ());
-  build.setData (BuildFieldStarted,
-                 QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
-  build.setData (BuildFieldFinished,
-                 QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
-  build.setData (BuildFieldBranch, object["branch"].toString ());
-  build.setData (BuildFieldAuthor, object["author"].toString ());
-  build.setData (BuildFieldMessage, object["message"].toString ().trimmed ());
+          if (reply->error () != QNetworkReply::NoError) {
+            qCritical () << "reply error" << reply->errorString () << int (reply->error ())
+                         << "on url" << request.url ();
+            reply->deleteLater ();
+            return;
+          }
 
-  auto status = build.data (BuildFieldStatus).toString ();
-  auto decoration = decorationForStatus (status);
-  build.setDecoration (decoration);
-  if (decoration == ModelItem::Decoration::Failure) {
-    getJobs (build);
-  }
+          switch (requestType) {
+            case RequestType::Login:
+              getReposotories ();
+              break;
 
-  updateRepository (*build.parent (), build);
-}
+            case RequestType::GetRepositories:
+              parseRepositories (reply->readAll ());
+              break;
 
-void Node::updateRepository (ModelItem &repository, const ModelItem &build)
-{
-  auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
-  auto started = build.data (BuildFieldStarted).toDateTime ();
-  if (lastStarted <= started) {
-    repository.setData (RepoFieldStatus, build.data (BuildFieldStatus));
-    repository.setData (RepoFieldLastBranch, build.data (BuildFieldBranch));
-    repository.setData (RepoFieldLastAuthor, build.data (BuildFieldAuthor));
-    repository.setData (RepoFieldLastMessage, build.data (BuildFieldMessage));
-    repository.setData (RepoFieldLastStarted, started);
-    repository.setData (RepoFieldLastFinished, build.data (BuildFieldFinished));
-    repository.setDecoration (build.decoration ());
-    emit updated (&repository);
+            case RequestType::GetBuilds:
+              {
+                auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
+                auto *repository = context.value <ModelItem *> ();
+                if (!repository) {
+                  qCritical () << "repository item is empty";
+                  break;
+                }
+                parseBuilds (reply->readAll (), *repository);
+              }
+              break;
 
-    auto decoration = build.decoration ();
-    if (decoration == Decoration::Running && !futureInterface_) {
-      futureInterface_ = new QFutureInterface<void>;
-      QString message = tr ("Drone ci ") + repository.data (RepoFieldName).toString ();
-      Core::ProgressManager::addTask (futureInterface_->future (), message, "CI.Drone.Running");
-      futureInterface_->reportStarted ();
-    }
-    else if (decoration != Decoration::Running && decoration != Decoration::Pending
-             && futureInterface_) {
-      if (decoration != Decoration::Success) {
-        futureInterface_->reportCanceled ();
-      }
-      futureInterface_->reportFinished ();
-      delete futureInterface_;
-      futureInterface_ = nullptr;
-    }
-  }
-}
+            case RequestType::GetJobs:
+              {
+                auto context = request.attribute (QNetworkRequest::Attribute (Attribute::Context));
+                auto *build = context.value <ModelItem *> ();
+                if (!build) {
+                  qCritical () << "build item is empty";
+                  break;
+                }
+                parseJobs (reply->readAll (), *build);
+              }
+              break;
 
-void Node::getJobs (ModelItem &build)
-{
-  auto repository = *build.parent ();
-  auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
-  url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/builds/"
-               + build.data (BuildFieldNumber).toString ());
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::GetJobs));
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
-                        QVariant::fromValue (&build));
+            case RequestType::GetLogs:
+              {
+                auto log = reply->readAll ();
+                if (!log.isEmpty ()) {
+                  QString msg = ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" + QString::fromUtf8 (log)
+                                + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
+                  Core::MessageManager::write (msg, Core::MessageManager::WithFocus);
+                }
+              }
+              break;
 
-  pendingReplies_ << manager_->get (request);
-}
+            default:
+              Q_ASSERT_X (false, "request", "unhandled request type");
+          }
 
-void Node::parseJobs (const QByteArray &reply, ModelItem &build)
-{
-  auto doc = QJsonDocument::fromJson (reply);
-  if (!doc.isObject ()) {
-    qCritical () << "wrong build info format" << reply;
-    return;
-  }
+          reply->deleteLater ();
+        }
 
-  auto object = doc.object ();
+        void Node::login () {
+          auto *multiPart = new QHttpMultiPart (QHttpMultiPart::FormDataType);
+          QHttpPart user;
+          user.setHeader (QNetworkRequest::ContentDispositionHeader,
+                          QVariant ("form-data; name=\"username\""));
+          user.setBody (settings_.user);
+          multiPart->append (user);
 
-  for (QJsonValueRef value: object["jobs"].toArray ()) {
-    auto object = value.toObject ();
-    auto number = object["number"].toInt ();
+          QHttpPart pass;
+          pass.setHeader (QNetworkRequest::ContentDispositionHeader,
+                          QVariant ("form-data; name=\"password\""));
+          pass.setBody (settings_.pass);
+          multiPart->append (pass);
 
-    auto found = false;
-    for (auto job: build.children ()) {
-      if (number == job->data (JobFieldNumber).toInt ()) {
-        parseJob (object, *job);
-        found = true;
-        break;
-      }
-    }
+          auto url = settings_.url;
+          url.setPath ("/authorize");
+          QNetworkRequest request (url);
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                                QVariant::fromValue (RequestType::Login));
 
-    if (found) {
-      continue;
-    }
+          QNetworkReply *reply = manager_->post (request, multiPart);
+          multiPart->setParent (reply);
+          pendingReplies_ << reply;
+        }
 
-    auto job = QSharedPointer<ModelItem>::create (&build);
-    parseJob (object, *job);
-    build.addChild (job);
-    emit added (job.data ());
-  }
-}
+        void Node::getReposotories () {
+          auto url = settings_.url;
+          url.setPath ("/api/user/repos");
+          QNetworkRequest request (url);
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                                QVariant::fromValue (RequestType::GetRepositories));
 
-void Node::parseJob (const QJsonObject &object, ModelItem &job)
-{
-  job.setData (JobFieldNumber, object["number"].toInt ());
-  job.setData (JobFieldStatus, object["status"].toString ());
-  job.setData (JobFieldStarted,
-               QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
-  job.setData (JobFieldFinished,
-               QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+          pendingReplies_ << manager_->get (request);
+        }
 
-  auto status = job.data (JobFieldStatus).toString ();
-  auto decoration = decorationForStatus (status);
-  job.setDecoration (decoration);
-  emit updated (&job);
-}
+        void Node::parseRepositories (const QByteArray &reply) {
+          auto doc = QJsonDocument::fromJson (reply);
+          if (!doc.isArray ()) {
+            qCritical () << "wrong repositories list format" << reply;
+            return;
+          }
+          for (QJsonValueRef value: doc.array ()) {
+            auto repo = QSharedPointer<ModelItem>::create (this);
 
-void Node::getLogs (ModelItem &job)
-{
-  const auto build = *job.parent ();
-  const auto repository = *build.parent ();
-  auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
-  url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/logs/"
-               + build.data (BuildFieldNumber).toString () + "/"
-               + job.data (JobFieldNumber).toString ());
-  QNetworkRequest request (url);
-  request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
-                        QVariant::fromValue (RequestType::GetLogs));
+            auto object = value.toObject ();
+            auto name = object["full_name"].toString ();
+            repo->setData (RepoFieldName, name);
 
-  pendingReplies_ << manager_->get (request);
-}
+            children_ << repo;
+            emit added (repo.data ());
 
-ModelItem::Decoration Node::decorationForStatus (const QString &status) const
-{
-  QMap<QString, ModelItem::Decoration> decorations {
-    {"skipped", ModelItem::Decoration::Skipped},
-    {"pending", ModelItem::Decoration::Pending},
-    {"running", ModelItem::Decoration::Running},
-    {"failure", ModelItem::Decoration::Failure},
-    {"success", ModelItem::Decoration::Success},
-    {"killed", ModelItem::Decoration::Failure},
-    {"error", ModelItem::Decoration::Failure}
-  };
-  return decorations.value (status);
-}
+            getBuilds (*repo);
+          }
+        }
 
-Settings Node::settings () const
-{
-  return settings_;
-}
+        void Node::getBuilds (ModelItem &repository) {
+          auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
+          url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/builds");
+          QNetworkRequest request (url);
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                                QVariant::fromValue (RequestType::GetBuilds));
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
+                                QVariant::fromValue (&repository));
 
-void Node::setSettings (const Settings &settings)
-{
-  settings_ = settings;
-  setData (NodeFieldUrl, settings_.url);
-  setData (NodeFieldUser, settings_.user);
-  clear ();
-  pendingReplies_.clear ();
+          pendingReplies_ << manager_->get (request);
+        }
 
-  auto *cookies = manager_->cookieJar ();
-  if (cookies) {
-    cookies->deleteLater ();
-  }
-  manager_->setCookieJar (new QNetworkCookieJar);
+        void Node::parseBuilds (const QByteArray &reply, ModelItem &repository) {
+          auto doc = QJsonDocument::fromJson (reply);
+          if (!doc.isArray ()) {
+            qCritical () << "wrong builds list format" << reply;
+            return;
+          }
+          auto isFirstUpdate = repository.isEmpty ();
+          for (QJsonValueRef value: doc.array ()) {
+            auto object = value.toObject ();
+            auto number = object["number"].toInt ();
 
-  if (settings_.isValid ()) {
-    login ();
-  }
+            auto found = false;
+            for (auto build: repository.children ()) {
+              if (number == build->data (BuildFieldNumber).toInt ()) {
+                if (build->decoration () == Decoration::Running) {
+                  parseBuild (object, *build);
+                  updateRepository (repository, *build);
+                }
+                found = true;
+                break;
+              }
+            }
 
-  emit reset ();
-}
+            if (found) {
+              continue;
+            }
 
-QVariant Settings::toVariant ()
-{
-  return QVariantList {"drone", url, user, (savePass ? pass : QByteArray ()), savePass};
-}
+            auto build = QSharedPointer<ModelItem>::create (&repository);
+            parseBuild (object, *build);
+            if (isFirstUpdate) {
+              repository.addChild (build);
+              emit added (build.data ());
+            }
+            else { // to preserve build order (descending by number)
+              repository.prependChild (build);
+              emit prepended (build.data ());
+            }
+          }
+        }
 
-Settings Settings::fromVariant (const QVariant &value)
-{
-  auto list = value.toList ();
-  if (list[0] != "drone" || list.size () < 5) {
-    return {};
-  }
-  return {list[1].toUrl (), list[2].toByteArray (), list[3].toByteArray (), list[4].toBool ()};
-}
+        void Node::parseBuild (const QJsonObject &object, ModelItem &build) {
+          build.setData (BuildFieldNumber, object["number"].toInt ());
+          build.setData (BuildFieldStatus, object["status"].toString ());
+          build.setData (BuildFieldStarted,
+                         QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+          build.setData (BuildFieldFinished,
+                         QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+          build.setData (BuildFieldBranch, object["branch"].toString ());
+          build.setData (BuildFieldAuthor, object["author"].toString ());
+          build.setData (BuildFieldMessage, object["message"].toString ().trimmed ());
 
-bool Settings::isValid () const
-{
-  return !(url.isEmpty () || user.isEmpty ());
-}
+          auto status = build.data (BuildFieldStatus).toString ();
+          auto decoration = decorationForStatus (status);
+          build.setDecoration (decoration);
+          if (decoration == ModelItem::Decoration::Failure) {
+            getJobs (build);
+          }
 
-} // namespace Drone
-} // namespace Ci
-} // namespace Internal
+          updateRepository (*build.parent (), build);
+        }
+
+        void Node::updateRepository (ModelItem &repository, const ModelItem &build) {
+          auto lastStarted = repository.data (RepoFieldLastStarted).toDateTime ();
+          auto started = build.data (BuildFieldStarted).toDateTime ();
+          if (lastStarted <= started) {
+            repository.setData (RepoFieldStatus, build.data (BuildFieldStatus));
+            repository.setData (RepoFieldLastBranch, build.data (BuildFieldBranch));
+            repository.setData (RepoFieldLastAuthor, build.data (BuildFieldAuthor));
+            repository.setData (RepoFieldLastMessage, build.data (BuildFieldMessage));
+            repository.setData (RepoFieldLastStarted, started);
+            repository.setData (RepoFieldLastFinished, build.data (BuildFieldFinished));
+            repository.setDecoration (build.decoration ());
+            emit updated (&repository);
+
+            auto decoration = build.decoration ();
+            if (decoration == Decoration::Running && !futureInterface_) {
+              futureInterface_ = new QFutureInterface<void>;
+              QString message = tr ("Drone ci ") + repository.data (RepoFieldName).toString ();
+              Core::ProgressManager::addTask (futureInterface_->future (), message, "CI.Drone.Running");
+              futureInterface_->reportStarted ();
+            }
+            else if (decoration != Decoration::Running && decoration != Decoration::Pending
+                     && futureInterface_) {
+              if (decoration != Decoration::Success) {
+                futureInterface_->reportCanceled ();
+              }
+              futureInterface_->reportFinished ();
+              delete futureInterface_;
+              futureInterface_ = nullptr;
+            }
+          }
+        }
+
+        void Node::getJobs (ModelItem &build) {
+          auto repository = *build.parent ();
+          auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
+          url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/builds/"
+                       + build.data (BuildFieldNumber).toString ());
+          QNetworkRequest request (url);
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                                QVariant::fromValue (RequestType::GetJobs));
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::Context),
+                                QVariant::fromValue (&build));
+
+          pendingReplies_ << manager_->get (request);
+        }
+
+        void Node::parseJobs (const QByteArray &reply, ModelItem &build) {
+          auto doc = QJsonDocument::fromJson (reply);
+          if (!doc.isObject ()) {
+            qCritical () << "wrong build info format" << reply;
+            return;
+          }
+
+          auto object = doc.object ();
+
+          for (QJsonValueRef value: object["jobs"].toArray ()) {
+            auto object = value.toObject ();
+            auto number = object["number"].toInt ();
+
+            auto found = false;
+            for (auto job: build.children ()) {
+              if (number == job->data (JobFieldNumber).toInt ()) {
+                parseJob (object, *job);
+                found = true;
+                break;
+              }
+            }
+
+            if (found) {
+              continue;
+            }
+
+            auto job = QSharedPointer<ModelItem>::create (&build);
+            parseJob (object, *job);
+            build.addChild (job);
+            emit added (job.data ());
+          }
+        }
+
+        void Node::parseJob (const QJsonObject &object, ModelItem &job) {
+          job.setData (JobFieldNumber, object["number"].toInt ());
+          job.setData (JobFieldStatus, object["status"].toString ());
+          job.setData (JobFieldStarted,
+                       QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+          job.setData (JobFieldFinished,
+                       QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+
+          auto status = job.data (JobFieldStatus).toString ();
+          auto decoration = decorationForStatus (status);
+          job.setDecoration (decoration);
+          emit updated (&job);
+        }
+
+        void Node::getLogs (ModelItem &job) {
+          const auto build = *job.parent ();
+          const auto repository = *build.parent ();
+          auto url = repository.parent ()->data (NodeFieldUrl).toUrl ();
+          url.setPath ("/api/repos/" + repository.data (RepoFieldName).toString () + "/logs/"
+                       + build.data (BuildFieldNumber).toString () + "/"
+                       + job.data (JobFieldNumber).toString ());
+          QNetworkRequest request (url);
+          request.setAttribute (QNetworkRequest::Attribute (Attribute::RequestType),
+                                QVariant::fromValue (RequestType::GetLogs));
+
+          pendingReplies_ << manager_->get (request);
+        }
+
+        ModelItem::Decoration Node::decorationForStatus (const QString &status) const {
+          QMap<QString, ModelItem::Decoration> decorations {
+            {"skipped", ModelItem::Decoration::Skipped},
+            {"pending", ModelItem::Decoration::Pending},
+            {"running", ModelItem::Decoration::Running},
+            {"failure", ModelItem::Decoration::Failure},
+            {"success", ModelItem::Decoration::Success},
+            {"killed", ModelItem::Decoration::Failure},
+            {"error", ModelItem::Decoration::Failure}
+          };
+          return decorations.value (status);
+        }
+
+        Settings Node::settings () const {
+          return settings_;
+        }
+
+        void Node::setSettings (const Settings &settings) {
+          settings_ = settings;
+          setData (NodeFieldUrl, settings_.url);
+          setData (NodeFieldUser, settings_.user);
+          clear ();
+          pendingReplies_.clear ();
+
+          auto *cookies = manager_->cookieJar ();
+          if (cookies) {
+            cookies->deleteLater ();
+          }
+          manager_->setCookieJar (new QNetworkCookieJar);
+
+          if (settings_.isValid ()) {
+            login ();
+          }
+
+          emit reset ();
+        }
+
+        QVariant Settings::toVariant () {
+          return QVariantList {"drone", url, user, (savePass ? pass : QByteArray ()), savePass};
+        }
+
+        Settings Settings::fromVariant (const QVariant &value) {
+          auto list = value.toList ();
+          if (list[0] != "drone" || list.size () < 5) {
+            return {};
+          }
+          return {list[1].toUrl (), list[2].toByteArray (), list[3].toByteArray (), list[4].toBool ()};
+        }
+
+        bool Settings::isValid () const {
+          return !(url.isEmpty () || user.isEmpty ());
+        }
+
+      } // namespace Drone
+    } // namespace Ci
+  } // namespace Internal
 } // namespace QtcUtilities

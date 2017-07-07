@@ -27,219 +27,195 @@ using namespace ProjectExplorer;
 using namespace TextEditor;
 
 namespace QtcUtilities {
-namespace Internal {
-namespace DockedOutput {
-const auto CONTEXT_ID = "DockedOutput.Context";
+  namespace Internal {
+    namespace DockedOutput {
+      const auto CONTEXT_ID = "DockedOutput.Context";
 
 
-class DockedOutputWidget : public QDockWidget
-{
-  Q_OBJECT
+      class DockedOutputWidget : public QDockWidget {
+        Q_OBJECT
 
-  public:
-    DockedOutputWidget (int id, RunControl *rc, QWidget *parent = nullptr);
-    ~DockedOutputWidget () override;
+        public:
+          DockedOutputWidget (int id, RunControl *rc, QWidget *parent = nullptr);
+          ~DockedOutputWidget () override;
 
-    bool reuse (RunControl *rc);
+          bool reuse (RunControl *rc);
 
-  public slots:
-    void appendMessage (RunControl *rc, const QString &out, Utils::OutputFormat format);
-    void markReady ();
+        public slots:
+          void appendMessage (RunControl *rc, const QString &out, Utils::OutputFormat format);
+          void markReady ();
 
-  private:
-    OutputWindow *output_;
-    QPointer<RunConfiguration> configuration_;
-    bool isReady_;
-};
+        private:
+          OutputWindow *output_;
+          QPointer<RunConfiguration> configuration_;
+          bool isReady_;
+      };
 
 
-DockedOutputWidget::DockedOutputWidget (int id, RunControl *rc, QWidget *parent)
-  : QDockWidget (parent),
-  output_ (new OutputWindow (Context (Id (CONTEXT_ID).withSuffix (id)), this)),
-  configuration_ (rc->runConfiguration ()), isReady_ (true)
-{
-  setWindowTitle (rc->displayName ());
-  setAllowedAreas (Qt::AllDockWidgetAreas);
-  setWidget (output_);
+      DockedOutputWidget::DockedOutputWidget (int id, RunControl *rc, QWidget *parent)
+        : QDockWidget (parent),
+        output_ (new OutputWindow (Context (Id (CONTEXT_ID).withSuffix (id)), this)),
+        configuration_ (rc->runConfiguration ()), isReady_ (true) {
+        setWindowTitle (rc->displayName ());
+        setAllowedAreas (Qt::AllDockWidgetAreas);
+        setWidget (output_);
 
-  auto formatter = new Utils::OutputFormatter;
-  formatter->setParent (this);
-  output_->setFormatter (formatter);
-  output_->setWordWrapEnabled (ProjectExplorerPlugin::projectExplorerSettings ().wrapAppOutput);
-  output_->setMaxLineCount (ProjectExplorerPlugin::projectExplorerSettings ().maxAppOutputLines);
-  output_->setWheelZoomEnabled (TextEditorSettings::behaviorSettings ().m_scrollWheelZooming);
-  output_->setBaseFont (TextEditorSettings::fontSettings ().font ());
+        auto formatter = new Utils::OutputFormatter;
+        formatter->setParent (this);
+        output_->setFormatter (formatter);
+        output_->setWordWrapEnabled (ProjectExplorerPlugin::projectExplorerSettings ().wrapAppOutput);
+        output_->setMaxLineCount (ProjectExplorerPlugin::projectExplorerSettings ().maxAppOutputLines);
+        output_->setWheelZoomEnabled (TextEditorSettings::behaviorSettings ().m_scrollWheelZooming);
+        output_->setBaseFont (TextEditorSettings::fontSettings ().font ());
 
-  auto agg = new Aggregation::Aggregate (this);
-  agg->add (output_);
-  agg->add (new BaseTextFind (output_));
+        auto agg = new Aggregation::Aggregate (this);
+        agg->add (output_);
+        agg->add (new BaseTextFind (output_));
 
-  reuse (rc);
-}
+        reuse (rc);
+      }
 
-DockedOutputWidget::~DockedOutputWidget ()
-{
+      DockedOutputWidget::~DockedOutputWidget () {
 
-}
+      }
 
-bool DockedOutputWidget::reuse (RunControl *rc)
-{
-  if (!isReady_ || rc->runConfiguration () != configuration_.data ()) {
-    return false;
-  }
+      bool DockedOutputWidget::reuse (RunControl *rc) {
+        if (!isReady_ || rc->runConfiguration () != configuration_.data ()) {
+          return false;
+        }
 
-  output_->grayOutOldContent ();
-  isReady_ = false;
+        output_->grayOutOldContent ();
+        isReady_ = false;
 
-  connect (rc, &RunControl::appendMessageRequested,
-           this, &DockedOutputWidget::appendMessage, Qt::UniqueConnection);
-  connect (rc, &RunControl::finished, this, &DockedOutputWidget::markReady,
-           Qt::UniqueConnection);
+        connect (rc, &RunControl::appendMessageRequested,
+                 this, &DockedOutputWidget::appendMessage, Qt::UniqueConnection);
+        connect (rc, &RunControl::finished, this, &DockedOutputWidget::markReady,
+                 Qt::UniqueConnection);
 
-  show ();
-  return true;
-}
+        show ();
+        return true;
+      }
 
-void DockedOutputWidget::appendMessage (RunControl */*rc*/, const QString &out,
-                                        Utils::OutputFormat format)
-{
-  output_->appendMessage (out, format);
-}
+      void DockedOutputWidget::appendMessage (RunControl */*rc*/, const QString &out,
+                                              Utils::OutputFormat format) {
+        output_->appendMessage (out, format);
+      }
 
-void DockedOutputWidget::markReady ()
-{
-  isReady_ = true;
-}
+      void DockedOutputWidget::markReady () {
+        isReady_ = true;
+      }
 
 
 
 
 
-DockedOutputPane::DockedOutputPane ()
-  : widget_ (new QMainWindow), isEnabledButton_ (new QToolButton),
-  isEnabled_ (false)
-{
-  isEnabledButton_->setCheckable (true);
-  isEnabledButton_->setChecked (isEnabled_);
-  isEnabledButton_->setIcon (Utils::Icons::RUN_SMALL.icon ());
-  isEnabledButton_->setToolTip (tr ("Enabled"));
-  connect (isEnabledButton_, &QToolButton::toggled,
-           this, &DockedOutputPane::setIsEnabled);
+      DockedOutputPane::DockedOutputPane ()
+        : widget_ (new QMainWindow), isEnabledButton_ (new QToolButton),
+        isEnabled_ (false) {
+        isEnabledButton_->setCheckable (true);
+        isEnabledButton_->setChecked (isEnabled_);
+        isEnabledButton_->setIcon (Utils::Icons::RUN_SMALL.icon ());
+        isEnabledButton_->setToolTip (tr ("Enabled"));
+        connect (isEnabledButton_, &QToolButton::toggled,
+                 this, &DockedOutputPane::setIsEnabled);
 
-  connect (ProjectExplorerPlugin::instance (), &ProjectExplorerPlugin::runControlStarted,
-           this, &DockedOutputPane::handleRunControlStart);
+        connect (ProjectExplorerPlugin::instance (), &ProjectExplorerPlugin::runControlStarted,
+                 this, &DockedOutputPane::handleRunControlStart);
 
-  QWidget *dummy = new QWidget;
-  widget_->setCentralWidget (dummy);
-  dummy->setMaximumSize (5,5);
-}
+        QWidget *dummy = new QWidget;
+        widget_->setCentralWidget (dummy);
+        dummy->setMaximumSize (5,5);
+      }
 
-DockedOutputPane::~DockedOutputPane ()
-{
-  delete widget_;
-  delete isEnabledButton_;
-}
+      DockedOutputPane::~DockedOutputPane () {
+        delete widget_;
+        delete isEnabledButton_;
+      }
 
-QWidget * DockedOutputPane::outputWidget (QWidget */*parent*/)
-{
-  return widget_;
-}
+      QWidget *DockedOutputPane::outputWidget (QWidget */*parent*/) {
+        return widget_;
+      }
 
-QList<QWidget *> DockedOutputPane::toolBarWidgets () const
-{
-  return {isEnabledButton_};
-}
+      QList<QWidget *> DockedOutputPane::toolBarWidgets () const {
+        return {isEnabledButton_};
+      }
 
-QString DockedOutputPane::displayName () const
-{
-  return tr ("Application docked output");
-}
+      QString DockedOutputPane::displayName () const {
+        return tr ("Application docked output");
+      }
 
-int DockedOutputPane::priorityInStatusBar () const
-{
-  return 60;
-}
+      int DockedOutputPane::priorityInStatusBar () const {
+        return 60;
+      }
 
-void DockedOutputPane::clearContents ()
-{
-}
+      void DockedOutputPane::clearContents () {
+      }
 
-void DockedOutputPane::visibilityChanged (bool visible)
-{
-  widget_->setVisible (visible);
-}
+      void DockedOutputPane::visibilityChanged (bool visible) {
+        widget_->setVisible (visible);
+      }
 
-void DockedOutputPane::setFocus ()
-{
-  widget_->setFocus ();
-}
+      void DockedOutputPane::setFocus () {
+        widget_->setFocus ();
+      }
 
-bool DockedOutputPane::hasFocus () const
-{
-  return widget_->hasFocus ();
-}
+      bool DockedOutputPane::hasFocus () const {
+        return widget_->hasFocus ();
+      }
 
-bool DockedOutputPane::canFocus () const
-{
-  return true;
-}
+      bool DockedOutputPane::canFocus () const {
+        return true;
+      }
 
-bool DockedOutputPane::canNavigate () const
-{
-  return false;
-}
+      bool DockedOutputPane::canNavigate () const {
+        return false;
+      }
 
-bool DockedOutputPane::canNext () const
-{
-  return false;
-}
+      bool DockedOutputPane::canNext () const {
+        return false;
+      }
 
-bool DockedOutputPane::canPrevious () const
-{
-  return false;
-}
+      bool DockedOutputPane::canPrevious () const {
+        return false;
+      }
 
-void DockedOutputPane::goToNext ()
-{
-}
+      void DockedOutputPane::goToNext () {
+      }
 
-void DockedOutputPane::goToPrev ()
-{
-}
+      void DockedOutputPane::goToPrev () {
+      }
 
-void DockedOutputPane::handleRunControlStart (ProjectExplorer::RunControl *rc)
-{
-  if (!isEnabled_) {
-    return;
-  }
+      void DockedOutputPane::handleRunControlStart (ProjectExplorer::RunControl *rc) {
+        if (!isEnabled_) {
+          return;
+        }
 
-  auto docks = widget_->findChildren<DockedOutputWidget *>();
-  for (auto dock: docks) {
-    if (dock->reuse (rc)) {
-      return;
-    }
-  }
+        auto docks = widget_->findChildren<DockedOutputWidget *>();
+        for (auto dock: docks) {
+          if (dock->reuse (rc)) {
+            return;
+          }
+        }
 
-  static int id = 0;
-  auto newDock = new DockedOutputWidget (++id, rc);
+        static int id = 0;
+        auto newDock = new DockedOutputWidget (++id, rc);
 
-  auto defaultDockArea = Qt::TopDockWidgetArea;
-  for (auto dock: docks) {
-    if (widget_->dockWidgetArea (dock) == defaultDockArea) {
-      widget_->tabifyDockWidget (dock, newDock);
-      return;
-    }
-  }
-  widget_->addDockWidget (defaultDockArea, newDock);
-}
+        auto defaultDockArea = Qt::TopDockWidgetArea;
+        for (auto dock: docks) {
+          if (widget_->dockWidgetArea (dock) == defaultDockArea) {
+            widget_->tabifyDockWidget (dock, newDock);
+            return;
+          }
+        }
+        widget_->addDockWidget (defaultDockArea, newDock);
+      }
 
-void DockedOutputPane::setIsEnabled (bool isEnabled)
-{
-  isEnabled_ = isEnabled;
-}
+      void DockedOutputPane::setIsEnabled (bool isEnabled) {
+        isEnabled_ = isEnabled;
+      }
 
-} // namespace DockedOutput
-} // namespace Internal
+    } // namespace DockedOutput
+  } // namespace Internal
 } // namespace QtcUtilities
 
 #include "DockedOutput.moc"

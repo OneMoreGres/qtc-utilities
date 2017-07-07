@@ -3,22 +3,21 @@
 #include <QObject>
 
 namespace ExtensionSystem {
-class IPlugin;
+  class IPlugin;
 }
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Ci {
+  namespace Internal {
+    namespace Ci {
 
-class Ci : public QObject
-{
-  Q_OBJECT
+      class Ci : public QObject {
+        Q_OBJECT
 
-  public:
-    explicit Ci (ExtensionSystem::IPlugin *plugin);
-    ~Ci () override;
-};
+        public:
+          explicit Ci (ExtensionSystem::IPlugin *plugin);
+          ~Ci () override;
+      };
 
-} // namespace Ci
-} // namespace Internal
+    } // namespace Ci
+  } // namespace Internal
 } // namespace QtcUtilities

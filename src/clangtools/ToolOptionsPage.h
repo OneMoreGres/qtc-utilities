@@ -8,39 +8,38 @@
 #include <QMap>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace ClangTools {
+  namespace Internal {
+    namespace ClangTools {
 
-class OptionsWidget;
+      class OptionsWidget;
 
-class ToolOptionsPage : public Core::IOptionsPage
-{
-  Q_OBJECT
+      class ToolOptionsPage : public Core::IOptionsPage {
+        Q_OBJECT
 
-  public:
-    using Settings = QList<ToolRunnerSettings>;
+        public:
+          using Settings = QList<ToolRunnerSettings>;
 
-    ToolOptionsPage ();
+          ToolOptionsPage ();
 
-    QWidget * widget () override;
-    void apply () override;
-    void finish () override;
+          QWidget *widget () override;
+          void apply () override;
+          void finish () override;
 
-    const Settings &settings () const;
+          const Settings &settings () const;
 
-  signals:
-    void settingsSaved ();
+        signals:
+          void settingsSaved ();
 
-  private:
-    void load ();
-    void save ();
+        private:
+          void load ();
+          void save ();
 
-    QPointer<OptionsWidget> widget_;
-    Settings settings_;
+          QPointer<OptionsWidget> widget_;
+          Settings settings_;
 
-    Q_DISABLE_COPY (ToolOptionsPage)
-};
+          Q_DISABLE_COPY (ToolOptionsPage)
+      };
 
-} // namespace ClangTools
-} // namespace Internal
+    } // namespace ClangTools
+  } // namespace Internal
 } // namespace QtcUtilities

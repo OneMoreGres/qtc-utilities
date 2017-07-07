@@ -10,32 +10,32 @@ class QCheckBox;
 QT_END_NAMESPACE
 
 namespace QtcUtilities {
-namespace Internal {
-namespace CodeDiscover {
+  namespace Internal {
+    namespace CodeDiscover {
 
-class CodeDiscoverWindow : public QWidget
-{
-  Q_OBJECT
+      class CodeDiscoverWindow : public QWidget {
+        Q_OBJECT
 
-  public:
-    CodeDiscoverWindow (ClassFlags flags, QWidget *parent = nullptr,
-                        Qt::WindowFlags f = {});
+        public:
+          CodeDiscoverWindow (ClassFlags flags, QWidget *parent = nullptr,
+                              Qt::WindowFlags f = {
+        });
 
-  signals:
-    void flagsChanged (ClassFlags flags);
+        signals:
+          void flagsChanged (ClassFlags flags);
 
-  public slots:
-    void setImage (const QPixmap &image);
+        public slots:
+          void setImage (const QPixmap &image);
 
-  private slots:
-    void updateFlags ();
-    void saveToFile ();
+        private slots:
+          void updateFlags ();
+          void saveToFile ();
 
-  private:
-    QLabel *imageLabel_;
-    QMap < ClassFlags, QCheckBox *> flags_;
-};
+        private:
+          QLabel *imageLabel_;
+          QMap < ClassFlags, QCheckBox *> flags_;
+      };
 
-} // namespace CodeDiscover
-} // namespace Internal
+    } // namespace CodeDiscover
+  } // namespace Internal
 } // namespace QtcUtilities

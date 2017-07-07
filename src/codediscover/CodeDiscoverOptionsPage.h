@@ -7,40 +7,39 @@
 #include <QPointer>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace CodeDiscover {
+  namespace Internal {
+    namespace CodeDiscover {
 
-class OptionsWidget;
+      class OptionsWidget;
 
-class CodeDiscoverOptionsPage : public Core::IOptionsPage
-{
-  Q_OBJECT
+      class CodeDiscoverOptionsPage : public Core::IOptionsPage {
+        Q_OBJECT
 
-  public:
-    CodeDiscoverOptionsPage ();
-    QWidget * widget () override;
-    void apply () override;
-    void finish () override;
+        public:
+          CodeDiscoverOptionsPage ();
+          QWidget *widget () override;
+          void apply () override;
+          void finish () override;
 
-    const Settings &settings () const;
+          const Settings &settings () const;
 
-    ClassFlags classFlags () const;
-    void setClassFlags (ClassFlags flags);
+          ClassFlags classFlags () const;
+          void setClassFlags (ClassFlags flags);
 
-  signals:
-    void settingsSaved ();
+        signals:
+          void settingsSaved ();
 
-  private:
-    void load ();
-    void save ();
+        private:
+          void load ();
+          void save ();
 
-    QPointer<OptionsWidget> widget_;
-    Settings settings_;
-    ClassFlags classFlags_;
+          QPointer<OptionsWidget> widget_;
+          Settings settings_;
+          ClassFlags classFlags_;
 
-    Q_DISABLE_COPY (CodeDiscoverOptionsPage)
-};
+          Q_DISABLE_COPY (CodeDiscoverOptionsPage)
+      };
 
-} // namespace CodeDiscover
-} // namespace Internal
+    } // namespace CodeDiscover
+  } // namespace Internal
 } // namespace QtcUtilities

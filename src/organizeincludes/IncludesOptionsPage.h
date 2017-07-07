@@ -7,36 +7,35 @@
 #include <QPointer>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace OrganizeIncludes {
+  namespace Internal {
+    namespace OrganizeIncludes {
 
-class OptionsWidget;
+      class OptionsWidget;
 
-class IncludesOptionsPage : public Core::IOptionsPage
-{
-  Q_OBJECT
+      class IncludesOptionsPage : public Core::IOptionsPage {
+        Q_OBJECT
 
-  public:
-    IncludesOptionsPage ();
-    QWidget * widget () override;
-    void apply () override;
-    void finish () override;
+        public:
+          IncludesOptionsPage ();
+          QWidget *widget () override;
+          void apply () override;
+          void finish () override;
 
-    const Settings &settings () const;
+          const Settings &settings () const;
 
-  signals:
-    void settingsSaved ();
+        signals:
+          void settingsSaved ();
 
-  private:
-    void load ();
-    void save ();
+        private:
+          void load ();
+          void save ();
 
-    QPointer<OptionsWidget> widget_;
-    Settings settings_;
+          QPointer<OptionsWidget> widget_;
+          Settings settings_;
 
-    Q_DISABLE_COPY (IncludesOptionsPage)
-};
+          Q_DISABLE_COPY (IncludesOptionsPage)
+      };
 
-} // namespace OrganizeIncludes
-} // namespace Internal
+    } // namespace OrganizeIncludes
+  } // namespace Internal
 } // namespace QtcUtilities

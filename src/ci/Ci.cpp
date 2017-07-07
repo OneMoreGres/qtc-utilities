@@ -4,19 +4,17 @@
 #include <extensionsystem/iplugin.h>
 
 namespace QtcUtilities {
-namespace Internal {
-namespace Ci {
+  namespace Internal {
+    namespace Ci {
 
-Ci::Ci (ExtensionSystem::IPlugin *plugin)
-{
-  plugin->addAutoReleasedObject (new Pane);
-}
+      Ci::Ci (ExtensionSystem::IPlugin *plugin) {
+        plugin->addAutoReleasedObject (new Pane);
+      }
 
-Ci::~Ci ()
-{
+      Ci::~Ci () {
 
-}
+      }
 
-} // namespace Ci
-} // namespace Internal
+    } // namespace Ci
+  } // namespace Internal
 } // namespace QtcUtilities

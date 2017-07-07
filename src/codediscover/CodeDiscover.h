@@ -5,45 +5,44 @@
 #include <QPointer>
 
 namespace ExtensionSystem {
-class IPlugin;
+  class IPlugin;
 }
 namespace Core {
-class IMode;
+  class IMode;
 }
 
 namespace QtcUtilities {
-namespace Internal {
-namespace CodeDiscover {
+  namespace Internal {
+    namespace CodeDiscover {
 
-class CodeDiscoverOptionsPage;
-class CodeDiscoverWindow;
-class CodeDiscoverToolRunner;
-class ClassDiagramGenerator;
+      class CodeDiscoverOptionsPage;
+      class CodeDiscoverWindow;
+      class CodeDiscoverToolRunner;
+      class ClassDiagramGenerator;
 
-class CodeDiscover : public QObject
-{
-  Q_OBJECT
+      class CodeDiscover : public QObject {
+        Q_OBJECT
 
-  public:
-    explicit CodeDiscover (ExtensionSystem::IPlugin *plugin);
+        public:
+          explicit CodeDiscover (ExtensionSystem::IPlugin *plugin);
 
-  public slots:
-    void showEntryClassDiagram ();
+        public slots:
+          void showEntryClassDiagram ();
 
-  private slots:
-    void updateSettings ();
-    void handleNewImage (const QPixmap &image);
-    void updateClassFlags (ClassFlags flags);
+        private slots:
+          void updateSettings ();
+          void handleNewImage (const QPixmap &image);
+          void updateClassFlags (ClassFlags flags);
 
-  private:
-    void registerActions ();
+        private:
+          void registerActions ();
 
-    QPointer <CodeDiscoverOptionsPage> options_;
-    QPointer <CodeDiscoverWindow> window_;
-    CodeDiscoverToolRunner *runner_;
-    ClassDiagramGenerator *classGenerator_;
-};
+          QPointer <CodeDiscoverOptionsPage> options_;
+          QPointer <CodeDiscoverWindow> window_;
+          CodeDiscoverToolRunner *runner_;
+          ClassDiagramGenerator *classGenerator_;
+      };
 
-} // namespace CodeDiscover
-} // namespace Internal
+    } // namespace CodeDiscover
+  } // namespace Internal
 } // namespace QtcUtilities

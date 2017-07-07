@@ -3,41 +3,40 @@
 #include <QPointer>
 
 namespace ExtensionSystem {
-class IPlugin;
+  class IPlugin;
 }
 
 namespace QtcUtilities {
-namespace Internal {
+  namespace Internal {
 
-namespace ClangTools {
-class AutoCheckEvents;
-}
+    namespace ClangTools {
+      class AutoCheckEvents;
+    }
 
-namespace Oclint {
+    namespace Oclint {
 
-class OclintRunner;
-class OclintOptionsPage;
+      class OclintRunner;
+      class OclintOptionsPage;
 
-class Oclint : public QObject
-{
-  Q_OBJECT
+      class Oclint : public QObject {
+        Q_OBJECT
 
-  public:
-    explicit Oclint (ExtensionSystem::IPlugin *plugin);
+        public:
+          explicit Oclint (ExtensionSystem::IPlugin *plugin);
 
-  private slots:
-    void updateSettings ();
+        private slots:
+          void updateSettings ();
 
-  private:
-    void registerActions ();
+        private:
+          void registerActions ();
 
-    using RunnerPtr = QSharedPointer<OclintRunner>;
+          using RunnerPtr = QSharedPointer<OclintRunner>;
 
-    ClangTools::AutoCheckEvents *checkEvents_;
-    RunnerPtr runner_;
-    QPointer<OclintOptionsPage> options_;
-};
+          ClangTools::AutoCheckEvents *checkEvents_;
+          RunnerPtr runner_;
+          QPointer<OclintOptionsPage> options_;
+      };
 
-} // namespace Oclint
-} // namespace Internal
+    } // namespace Oclint
+  } // namespace Internal
 } // namespace QtcUtilities
