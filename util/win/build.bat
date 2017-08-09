@@ -17,7 +17,7 @@ cd ..
 
 
 set /p VERSION=<qtcreator-latest\version
-set PLUGIN_NAME=QtcUtilites
+set PLUGIN_NAME=QtcUtilities
 
 if not exist qtcreator-latest\compiled\lib\qtcreator\plugins\%PLUGIN_NAME%4.dll  exit /b 1
 

@@ -23,7 +23,7 @@ make
 cd ..
 
 
-PLUGIN_NAME="QtcUtilites"
+PLUGIN_NAME="QtcUtilities"
 VERSION=$(cat qtcreator-latest/version)
 
 if [ ! -f "qtcreator-latest/compiled/Contents/PlugIns/lib$PLUGIN_NAME.dylib" ]; then exit 1; fi

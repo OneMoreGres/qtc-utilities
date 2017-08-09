@@ -22,7 +22,7 @@ make -j`nproc`
 cd ..
 
 
-PLUGIN_NAME="QtcUtilites"
+PLUGIN_NAME="QtcUtilities"
 VERSION=$(cat qtcreator-latest/version)
 
 if [ ! -f "qtcreator-latest/compiled/lib/qtcreator/plugins/lib$PLUGIN_NAME.so" ]; then exit 1; fi
