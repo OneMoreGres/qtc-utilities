@@ -119,8 +119,9 @@ namespace QtcUtilities {
         connect (isEnabledButton_, &QToolButton::toggled,
                  this, &DockedOutputPane::setIsEnabled);
 
-        connect (ProjectExplorerPlugin::instance (), &ProjectExplorerPlugin::runControlStarted,
-                 this, &DockedOutputPane::handleRunControlStart);
+        // disabled, at least for now
+        //        connect (ProjectExplorerPlugin::instance (), &ProjectExplorerPlugin::runControlStarted,
+        //                 this, &DockedOutputPane::handleRunControlStart);
 
         QWidget *dummy = new QWidget;
         widget_->setCentralWidget (dummy);
