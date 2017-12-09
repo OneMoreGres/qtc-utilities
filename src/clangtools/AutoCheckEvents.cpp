@@ -40,7 +40,7 @@ namespace QtcUtilities {
       }
 
       void AutoCheckEvents::checkCurrentNode () {
-        if (auto node = ProjectTree::currentNode ()) {
+        if (auto node = ProjectTree::findCurrentNode ()) {
           emitCheckFiles (getFiles (node), CheckManual);
         }
       }
