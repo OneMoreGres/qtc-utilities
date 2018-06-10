@@ -2,13 +2,6 @@
 
 Different useful/useless utilities.
 
-## Docked output pane
-
-Makes additional application output pane that contains dock widgets instead of tab widgets.
-So now it is possible to see several apps' output an once.
-
-![Preview](util/dockoutput.png?raw=true)
-
 ## Organize includes
 
 Removes unused, adds absent, resolves misplaced and sorts includes in current document.

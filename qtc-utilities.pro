@@ -6,7 +6,6 @@ include(paths.pri)
 
 SOURCES += \
     src/QtcUtilitiesPlugin.cpp \
-    src/dockedoutput/DockedOutput.cpp \
     src/organizeincludes/IncludesOrganizer.cpp \
     src/organizeincludes/IncludesOptionsPage.cpp \
     src/organizeincludes/Include.cpp \
@@ -28,7 +27,6 @@ SOURCES += \
 HEADERS += \
     src/Constants.h \
     src/QtcUtilitiesPlugin.h \
-    src/dockedoutput/DockedOutput.h \
     src/organizeincludes/IncludesOrganizer.h \
     src/organizeincludes/IncludesSettings.h \
     src/organizeincludes/IncludesOptionsPage.h \

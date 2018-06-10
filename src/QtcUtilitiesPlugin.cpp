@@ -1,5 +1,4 @@
 #include "QtcUtilitiesPlugin.h"
-#include "dockedoutput/DockedOutput.h"
 #include "organizeincludes/IncludesOrganizer.h"
 #include "codediscover/CodeDiscover.h"
 #include "ci/Ci.h"
@@ -33,7 +32,6 @@ namespace QtcUtilities {
       // depends on have initialized their members.
 
       addAutoReleasedObject (new OrganizeIncludes::IncludesOrganizer (this));
-      addAutoReleasedObject (new DockedOutput::DockedOutputPane);
       addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
       addAutoReleasedObject (new Ci::Ci (this));
 
