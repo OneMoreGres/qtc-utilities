@@ -1,7 +1,5 @@
 #pragma once
 
-#include "PluginGlobal.h"
-
 #include <extensionsystem/iplugin.h>
 
 namespace QtcUtilities {

@@ -6,11 +6,6 @@ include(paths.pri)
 
 SOURCES += \
     src/QtcUtilitiesPlugin.cpp \
-    src/clangtools/ClangTools.cpp \
-    src/clangtools/AutoCheckEvents.cpp \
-    src/clangtools/ToolRunner.cpp \
-    src/clangtools/ToolOutputParser.cpp \
-    src/clangtools/ToolOptionsPage.cpp \
     src/dockedoutput/DockedOutput.cpp \
     src/organizeincludes/IncludesOrganizer.cpp \
     src/organizeincludes/IncludesOptionsPage.cpp \
@@ -23,10 +18,6 @@ SOURCES += \
     src/codediscover/CodeDiscoverWindow.cpp \
     src/codediscover/CodeDiscoverToolRunner.cpp \
     src/codediscover/ClassDiagramGenerator.cpp \
-    src/oclint/Oclint.cpp \
-    src/oclint/OclintOptionsPage.cpp \
-    src/oclint/OclintOutputParser.cpp \
-    src/oclint/OclintRunner.cpp \
     src/ci/Ci.cpp \
     src/ci/Drone.cpp \
     src/ci/Model.cpp \
@@ -36,15 +27,7 @@ SOURCES += \
 
 HEADERS += \
     src/Constants.h \
-    src/PluginGlobal.h \
     src/QtcUtilitiesPlugin.h \
-    src/clangtools/ClangTools.h \
-    src/clangtools/AutoCheckEvents.h \
-    src/clangtools/ToolRunner.h \
-    src/clangtools/ToolOutputParser.h \
-    src/clangtools/ToolOptionsPage.h \
-    src/clangtools/CheckTypes.h \
-    src/clangtools/ClangToolsConstants.h \
     src/dockedoutput/DockedOutput.h \
     src/organizeincludes/IncludesOrganizer.h \
     src/organizeincludes/IncludesSettings.h \
@@ -61,11 +44,6 @@ HEADERS += \
     src/codediscover/CodeDiscoverWindow.h \
     src/codediscover/CodeDiscoverToolRunner.h \
     src/codediscover/ClassDiagramGenerator.h \
-    src/oclint/Oclint.h \
-    src/oclint/OclintConstants.h \
-    src/oclint/OclintOptionsPage.h \
-    src/oclint/OclintOutputParser.h \
-    src/oclint/OclintRunner.h \
     src/ci/Ci.h \
     src/ci/Drone.h \
     src/ci/Model.h \

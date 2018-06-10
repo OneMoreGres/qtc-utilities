@@ -1,9 +1,7 @@
 #include "QtcUtilitiesPlugin.h"
-#include "clangtools/ClangTools.h"
 #include "dockedoutput/DockedOutput.h"
 #include "organizeincludes/IncludesOrganizer.h"
 #include "codediscover/CodeDiscover.h"
-#include "oclint/Oclint.h"
 #include "ci/Ci.h"
 
 #include <coreplugin/icore.h>
@@ -36,9 +34,7 @@ namespace QtcUtilities {
 
       addAutoReleasedObject (new OrganizeIncludes::IncludesOrganizer (this));
       addAutoReleasedObject (new DockedOutput::DockedOutputPane);
-      addAutoReleasedObject (new ClangTools::ClangTools (this));
       addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
-      addAutoReleasedObject (new Oclint::Oclint (this));
       addAutoReleasedObject (new Ci::Ci (this));
 
       initTranslation ();
