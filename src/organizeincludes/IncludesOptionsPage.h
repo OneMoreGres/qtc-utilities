@@ -16,7 +16,7 @@ namespace QtcUtilities {
         Q_OBJECT
 
         public:
-          IncludesOptionsPage ();
+          IncludesOptionsPage (QObject *parent);
           QWidget *widget () override;
           void apply () override;
           void finish () override;

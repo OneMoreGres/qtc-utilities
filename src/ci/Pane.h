@@ -14,7 +14,7 @@ namespace QtcUtilities {
         Q_OBJECT
 
         public:
-          Pane ();
+          Pane (QObject *parent);
           ~Pane ();
 
           QWidget *outputWidget (QWidget *parent) override;

@@ -31,9 +31,9 @@ namespace QtcUtilities {
       // In the initialize function, a plugin can be sure that the plugins it
       // depends on have initialized their members.
 
-      addAutoReleasedObject (new OrganizeIncludes::IncludesOrganizer (this));
-      addAutoReleasedObject (new CodeDiscover::CodeDiscover (this));
-      addAutoReleasedObject (new Ci::Ci (this));
+      new OrganizeIncludes::IncludesOrganizer (this);
+      new CodeDiscover::CodeDiscover (this);
+      new Ci::Ci (this);
 
       initTranslation ();
       return true;

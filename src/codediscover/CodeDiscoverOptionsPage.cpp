@@ -106,8 +106,8 @@ namespace QtcUtilities {
 
 
 
-      CodeDiscoverOptionsPage::CodeDiscoverOptionsPage ()
-        : widget_ (nullptr), classFlags_ (ShowAll) {
+      CodeDiscoverOptionsPage::CodeDiscoverOptionsPage (QObject *parent)
+        : IOptionsPage(parent), widget_ (nullptr), classFlags_ (ShowAll) {
         setId (OPTIONS_PAGE_ID);
         setDisplayName (tr ("Code discover"));
         setCategory (OPTIONS_CATEGORY_ID);

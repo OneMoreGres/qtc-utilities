@@ -8,7 +8,7 @@ namespace QtcUtilities {
     namespace Ci {
 
       Ci::Ci (ExtensionSystem::IPlugin *plugin) {
-        plugin->addAutoReleasedObject (new Pane);
+        new Pane (this);
       }
 
       Ci::~Ci () {

@@ -123,8 +123,8 @@ namespace QtcUtilities {
 
 
 
-      IncludesOptionsPage::IncludesOptionsPage ()
-        : widget_ (nullptr) {
+      IncludesOptionsPage::IncludesOptionsPage (QObject *parent)
+        : IOptionsPage(parent), widget_ (nullptr) {
         setId (OPTIONS_PAGE_ID);
         setDisplayName (tr ("Organize Includes"));
         setCategory (OPTIONS_CATEGORY_ID);

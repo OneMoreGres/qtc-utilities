@@ -201,9 +201,8 @@ namespace QtcUtilities {
 
 
       IncludesOrganizer::IncludesOrganizer (ExtensionSystem::IPlugin *plugin) :
-        options_ (new IncludesOptionsPage) {
+        options_ (new IncludesOptionsPage (this)) {
         registerActions ();
-        plugin->addAutoReleasedObject (options_.data ());
       }
 
 

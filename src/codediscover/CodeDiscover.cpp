@@ -28,24 +28,22 @@ namespace QtcUtilities {
   namespace Internal {
     namespace CodeDiscover {
 
-      CodeDiscover::CodeDiscover (ExtensionSystem::IPlugin *plugin) :
-        options_ (new CodeDiscoverOptionsPage),
+      CodeDiscover::CodeDiscover (ExtensionSystem::IPlugin *) :
+        options_ (new CodeDiscoverOptionsPage (this)),
         window_ (new CodeDiscoverWindow (options_->classFlags ())),
         runner_ (new CodeDiscoverToolRunner (this)),
         classGenerator_ (new ClassDiagramGenerator (this)) {
         registerActions ();
         connect (options_.data (), &CodeDiscoverOptionsPage::settingsSaved,
                  this, &CodeDiscover::updateSettings);
-        plugin->addAutoReleasedObject (options_.data ());
 
-        auto *mode = new IMode;
+        auto *mode = new IMode(this);
         mode->setId ({MODE_ID});
         mode->setContext (Context {CONTEXT_ID});
         mode->setWidget (window_.data ());
         auto iconName = Icon (QLatin1String (MODE_ICON));
         mode->setIcon (Icon::modeIcon (iconName, iconName, iconName));
         mode->setDisplayName (tr ("Discover"));
-        plugin->addAutoReleasedObject (mode);
 
         connect (runner_, &CodeDiscoverToolRunner::newImage,
                  this, &CodeDiscover::handleNewImage);

@@ -5,8 +5,8 @@ namespace QtcUtilities {
   namespace Internal {
     namespace Ci {
 
-      Pane::Pane ()
-        : widget_ (new QTreeView), model_ (new Model (this)) {
+      Pane::Pane (QObject *parent)
+        : IOutputPane (parent), widget_ (new QTreeView), model_ (new Model (this)) {
         widget_->setModel (model_);
         widget_->setEditTriggers (QAbstractItemView::NoEditTriggers);
         widget_->setContextMenuPolicy (Qt::CustomContextMenu);
