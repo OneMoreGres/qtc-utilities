@@ -304,9 +304,9 @@ namespace QtcUtilities {
           build.setData (BuildFieldNumber, object["number"].toInt ());
           build.setData (BuildFieldStatus, object["status"].toString ());
           build.setData (BuildFieldStarted,
-                         QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+                         QDateTime::fromSecsSinceEpoch (object["started_at"].toVariant ().toUInt ()));
           build.setData (BuildFieldFinished,
-                         QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+                         QDateTime::fromSecsSinceEpoch (object["finished_at"].toVariant ().toUInt ()));
           build.setData (BuildFieldBranch, object["branch"].toString ());
           build.setData (BuildFieldAuthor, object["author"].toString ());
           build.setData (BuildFieldMessage, object["message"].toString ().trimmed ());
@@ -404,9 +404,9 @@ namespace QtcUtilities {
           job.setData (JobFieldNumber, object["number"].toInt ());
           job.setData (JobFieldStatus, object["status"].toString ());
           job.setData (JobFieldStarted,
-                       QDateTime::fromTime_t (object["started_at"].toVariant ().toUInt ()));
+                       QDateTime::fromSecsSinceEpoch (object["started_at"].toVariant ().toUInt ()));
           job.setData (JobFieldFinished,
-                       QDateTime::fromTime_t (object["finished_at"].toVariant ().toUInt ()));
+                       QDateTime::fromSecsSinceEpoch (object["finished_at"].toVariant ().toUInt ()));
 
           auto status = job.data (JobFieldStatus).toString ();
           auto decoration = decorationForStatus (status);
