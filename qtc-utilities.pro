@@ -22,7 +22,11 @@ SOURCES += \
     src/ci/Model.cpp \
     src/ci/Pane.cpp \
     src/ci/ModelItem.cpp \
-    src/ci/NodeEdit.cpp
+    src/ci/NodeEdit.cpp \
+    src/includes/includeutils.cpp \
+    src/includes/includetree.cpp \
+    src/includes/includeextractor.cpp \
+    src/includes/includetreeapplier.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -47,7 +51,11 @@ HEADERS += \
     src/ci/Model.h \
     src/ci/Pane.h \
     src/ci/ModelItem.h \
-    src/ci/NodeEdit.h
+    src/ci/NodeEdit.h \
+    src/includes/includeutils.h \
+    src/includes/includetree.h \
+    src/includes/includeextractor.h \
+    src/includes/includetreeapplier.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
