@@ -16,8 +16,17 @@
 #include <cplusplus/CppDocument.h>
 #include <cplusplus/Symbol.h>
 
+#include "utils/tooltip/tooltip.h"
+#include "texteditor/basehoverhandler.h"
+
+#include "texteditor/texteditor.h"
+#include "texteditor/textmark.h"
+#include "texteditor/textdocument.h"
+#include <utils/executeondestruction.h>
+
 #include <QMenu>
 #include <QDir>
+#include <QTextBlock>
 
 namespace QtcUtilities {
   namespace Internal {
@@ -36,6 +45,64 @@ namespace QtcUtilities {
         const char OPTIONS_CATEGORY_ICON[] = ":/resources/section.png";
       }
 
+      class WeightHoverHandle : public TextEditor::BaseHoverHandler {
+        void identifyMatch (TextEditor::TextEditorWidget *editorWidget, int pos,
+                            ReportPriority report) override {
+          Utils::ExecuteOnDestruction reportPriority ([this, report]() {
+            report (priority ());
+          });
+
+          auto doc = editorWidget->textDocument ();
+          auto block = doc->document ()->findBlock (pos);
+          //          qDebug () << block.text ()
+          //                    << doc->filePath ();
+          if (!block.text ().startsWith ("#include")) {
+            return;
+          }
+
+          const auto line = block.firstLineNumber () + 1;
+
+          auto model = CppTools::CppModelManager::instance ();
+          auto snapshot = model->snapshot ();
+          auto cppDocument = snapshot.document (doc->filePath ().toString ());
+          if (!cppDocument) {
+            qDebug () << "parse failed" << cppDocument;
+            return;
+          }
+
+          for (const auto &inc: cppDocument->resolvedIncludes ()) {
+            //            qDebug () << inc.resolvedFileName () << inc.line () << inc.unresolvedFileName () << line;
+            if (inc.line () != line) {
+              continue;
+            }
+
+            const auto includes = snapshot.allIncludesForDocument (inc.resolvedFileName ());
+
+            auto own = QFileInfo (inc.resolvedFileName ()).size ();
+            auto weight = own;
+            for (const auto &i: includes) {
+              weight += QFileInfo (i).size ();
+            }
+
+            const QString str = inc.resolvedFileName () + " =  " +
+                                QString::number (own / 1024., 'f', 1) +
+                                +"(" + QString::number (weight / 1024., 'f', 1) + ") Kb";
+            setToolTip (str);
+            break;
+          }
+
+          //          auto cppDocument = snapshot.preprocessedDocument (doc->filePath ()->contents (),
+          //                                                            documentFile);
+
+          //          const auto line = editorWidget->textAt (pos - 100, pos + 100);
+          //          qDebug () << line;
+          //          setToolTip (line);
+
+          //          const auto current = Core::EditorManager::currentDocument ();
+          //          auto documentFile = current->filePath ().toString ();
+        }
+      };
+
       IncludeUtils::IncludeUtils (ExtensionSystem::IPlugin *plugin) {
         using namespace Core;
         auto menu = ActionManager::createMenu (MENU_ID);
@@ -48,6 +115,13 @@ namespace QtcUtilities {
           auto command = ActionManager::registerAction (action, ACTION_ORGANIZE_INCLUDES);
           command->setDefaultKeySequence (QKeySequence (tr ("Alt+I,Alt+I")));
           menu->addAction (command);
+        }
+
+        auto factories = Core::IEditorFactory::allEditorFactories ();
+        for (const auto f: factories) {
+          if (auto text = qobject_cast<TextEditor::TextEditorFactory *>(f)) {
+            text->addHoverHandler (new WeightHoverHandle);
+          }
         }
       }
 
@@ -116,6 +190,29 @@ namespace QtcUtilities {
         IncludeTree tree (cppDocument->fileName ());
         tree.build (snapshot);
         qDebug () << "was" << tree.includes ();
+
+
+
+        //        for (const auto &inc: cppDocument->resolvedIncludes ()) {
+        //          const auto node = tree.node (inc.resolvedFileName ());
+        //          //          using Diag = Document::DiagnosticMessage;
+        //          //          qDebug () << "diag" << node.fileName () << node.weight ()
+        //          //                    << inc.resolvedFileName ();
+        //          const auto weight = tree.totalWeight (snapshot.allIncludesForDocument (cppDocument->fileName ()));
+        //          const QString str =
+        //            "Weight " + QString::number (weight / 1024., 'f', 1) + " Kb";
+        //          qDebug () << str << node.fileName ();
+        //          //                  auto mark = new TextEditor::TextMark (
+        //          //                    Utils::FileName::fromString (cppDocument->fileName ()),
+        //          //                    inc.line (), "INC.INCLUDES.WEIGHT");
+        //          //                  mark->setLineAnnotation (str);
+        //          //                  mark->setDefaultToolTip (str);
+        //          //                  mark->setToolTip (str);
+        //          //          cppDocument->addDiagnosticMessage ({Diag::Warning, cppDocument->fileName (),
+        //          //                                              inc.line (), 0, QString::number (node.weight ())});
+        //        }
+        //        return;
+
         tree.distribute (extractor.symbols ());
         qDebug () << "distributed" << tree.root ().allSymbols ().size ()
                   << "from" << extractor.symbols ().size ();
