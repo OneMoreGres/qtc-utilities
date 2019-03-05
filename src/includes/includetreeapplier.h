@@ -12,6 +12,7 @@ class IncludeTreeApplier {
   public:
     IncludeTreeApplier (CPlusPlus::Document::Ptr document);
 
+    void removeDuplicates ();
     void apply (const IncludeTree &tree);
 
   private:

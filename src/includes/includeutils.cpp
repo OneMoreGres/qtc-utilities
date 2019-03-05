@@ -126,6 +126,7 @@ namespace QtcUtilities {
         qDebug () << "removed nested" << tree.includes ();
 
         IncludeTreeApplier applier (cppDocument);
+        applier.removeDuplicates ();
         applier.apply (tree);
 
         return;

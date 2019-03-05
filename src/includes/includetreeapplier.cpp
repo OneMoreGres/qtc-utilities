@@ -7,6 +7,7 @@
 #include <texteditor/texteditor.h>
 #include <texteditor/textdocument.h>
 #include <texteditor/textdocumentlayout.h>
+#include <texteditor/codeassist/textdocumentmanipulator.h>
 
 #include <utils/qtcassert.h>
 
@@ -23,7 +24,22 @@ IncludeTreeApplier::IncludeTreeApplier (CPlusPlus::Document::Ptr document) :
   unfoldDocument ();
 }
 
+void IncludeTreeApplier::removeDuplicates () {
+  QTC_ASSERT (document_, return );
+  QSet<QString> used;
+  for (const auto &include: document_->resolvedIncludes ()) {
+    if (!used.contains (include.resolvedFileName ())) {
+      used.insert (include.resolvedFileName ());
+      continue;
+    }
+    qDebug () << "remove duplicate" << include.line () << include.unresolvedFileName ();
+    removeIncludeAt (include.line ());
+  }
+}
+
 void IncludeTreeApplier::apply (const IncludeTree &tree) {
+  //    TextEditor::TextDocumentManipulator manipulator(
+  //Core::EditorManager::openEditor (document_->fileName ()))
   QTC_ASSERT (document_, return );
   const auto become = tree.includes ();
   for (const auto &include: document_->resolvedIncludes ()) {
