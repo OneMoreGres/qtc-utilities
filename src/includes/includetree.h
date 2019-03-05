@@ -20,6 +20,7 @@ class IncludeTreeNode {
     uint weight () const;
     const QString &fileName () const;
     Symbols allSymbols () const;
+    bool hasChild (const QString &fileName) const;
 
     Symbols symbols () const;
 
@@ -43,12 +44,15 @@ class IncludeTree {
     using Symbols = QSet<CPlusPlus::Symbol *>;
     explicit IncludeTree (const QString &fileName);
 
+    IncludeTreeNode node (const QString &fileName) const;
     QStringList includes () const;
+    uint totalWeight (const QSet<QString> &files) const;
 
     void build (const CPlusPlus::Snapshot &snapshot);
     void distribute (const Symbols &symbols);
     void addNew (const Symbols &symbols, const CPlusPlus::Snapshot &snapshot);
     void removeEmptyPaths ();
+    void removeNestedPaths ();
 
     const IncludeTreeNode &root () const;
 

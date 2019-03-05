@@ -122,6 +122,9 @@ namespace QtcUtilities {
         tree.removeEmptyPaths ();
         qDebug () << "removed empty" << tree.includes ();
 
+        tree.removeNestedPaths ();
+        qDebug () << "removed nested" << tree.includes ();
+
         IncludeTreeApplier applier (cppDocument);
         applier.apply (tree);
 

@@ -11,15 +11,29 @@ IncludeTreeNode::IncludeTreeNode (const QString &fileName) :
 }
 
 void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegistry &registry) {
+  //  qDebug () << "expand" << fileName_;
   auto document = snapshot.document (fileName_);
   if (!document) {
     // TODO parse?
     qDebug () << "no document for" << fileName_;
     QFile file (fileName_);
     weight_ = file.size ();
+    return;
   }
 
-  weight_ = document->utf8Source ().size ();
+  if (!document->isParsed ()) {
+    qDebug () << "not parsed";
+    document->parse ();
+  }
+  if (!document->utf8Source ().isEmpty ()) {
+    qDebug () << "got source";
+    weight_ = document->utf8Source ().size ();
+  }
+  else {
+    QFile file (fileName_);
+    weight_ = file.size ();
+  }
+  //  qDebug () << fileName_ << "init weight" << weight_;
 
   auto includes = document->includedFiles ();
   includes.removeDuplicates ();
@@ -29,12 +43,15 @@ void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegist
     if (!registry.contains (include)) {
       auto &child = registry[include];
       child.fileName_ = include;
+      //      qDebug () << fileName_ << "called expand for" << include;
       child.expand (snapshot, registry);
     }
 
     auto child = &registry[include];
     children_.append (child);
-    weight_ += child->weight ();
+    //    weight_ += child->weight ();
+
+    //    qDebug () << fileName_ << "weight with include" << include << weight_;
     //    auto child = IncludeTreeNode (include);
     //    child.expand (snapshot, registry);
     //    weight_ += child.weight ();
@@ -123,6 +140,15 @@ IncludeTreeNode::Symbols IncludeTreeNode::allSymbols () const {
   return allSymbols (used);
 }
 
+bool IncludeTreeNode::hasChild (const QString &fileName) const {
+  for (const auto &child: children_) {
+    if (child->fileName_ == fileName || child->hasChild (fileName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 IncludeTreeNode::Symbols IncludeTreeNode::allSymbols (QVector<QString> &used) const {
   if (used.contains (fileName_)) {
     return {};
@@ -150,6 +176,10 @@ IncludeTree::IncludeTree (const QString &fileName) :
 
 }
 
+IncludeTreeNode IncludeTree::node (const QString &fileName) const {
+  return registry_[fileName];
+}
+
 QStringList IncludeTree::includes () const {
   QStringList result;
 
@@ -161,6 +191,14 @@ QStringList IncludeTree::includes () const {
     return node->fileName ();
   });
 
+  return result;
+}
+
+uint IncludeTree::totalWeight (const QSet<QString> &files) const {
+  auto result = 0u;
+  for (const auto &i: files) {
+    result += registry_[i].weight ();
+  }
   return result;
 }
 
@@ -201,6 +239,64 @@ void IncludeTree::removeEmptyPaths () {
   children.erase (std::remove_if (children.begin (), children.end (),
                                   [](const IncludeTreeNode *node) {
     return node->allSymbols ().isEmpty ();
+  }), children.end ());
+}
+
+void IncludeTree::removeNestedPaths () {
+  using Nodes = QVector<const IncludeTreeNode *>;
+  QHash<const CPlusPlus::Symbol *, Nodes> nodePerSymbol;
+  auto &children = root_.children_;
+
+  for (const auto child: children) {
+    for (const auto symbol: child->allSymbols ()) {
+      nodePerSymbol[symbol].append (child);
+    }
+  }
+
+  const auto compareNodeWeight = [](const IncludeTreeNode *l, const IncludeTreeNode *r) {
+                                   Q_ASSERT (l && r);
+                                   return l->weight () < r->weight ();
+                                 };
+  const auto compareNodeCount = [](const Nodes &l, const Nodes &r) {
+                                  return l.size () < r.size ();
+                                };
+
+  QVector<const IncludeTreeNode *> usedNodes;
+  while (!nodePerSymbol.isEmpty ()) {
+    auto unique = std::find_if (nodePerSymbol.cbegin (), nodePerSymbol.cend (),
+                                [](const QVector<const IncludeTreeNode *> &list) {
+      return list.size () == 1;
+    });
+    if (unique != nodePerSymbol.cend ()) {
+      const auto uniqueNode = unique.value ().first ();
+      usedNodes.append (uniqueNode);
+      for (auto symbol: uniqueNode->allSymbols ()) {
+        nodePerSymbol.remove (symbol);
+      }
+      continue;
+    }
+
+    const auto minVariable = std::min_element (nodePerSymbol.cbegin (), nodePerSymbol.cend (),
+                                               compareNodeCount);
+    Q_ASSERT (minVariable != nodePerSymbol.cend ());
+
+    const auto symbolNodes = minVariable.value ();
+    Q_ASSERT (!symbolNodes.isEmpty ());
+
+    const auto min = std::min_element (symbolNodes.cbegin (), symbolNodes.cend (),
+                                       compareNodeWeight);
+    Q_ASSERT (min != symbolNodes.cend ());
+
+    const auto minNode = *min;
+    usedNodes.append (minNode);
+    for (auto symbol: minNode->allSymbols ()) {
+      nodePerSymbol.remove (symbol);
+    }
+  }
+
+  children.erase (std::remove_if (children.begin (), children.end (),
+                                  [usedNodes](const IncludeTreeNode *node) {
+    return !usedNodes.contains (node);
   }), children.end ());
 }
 
