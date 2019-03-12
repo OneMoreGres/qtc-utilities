@@ -1,7 +1,7 @@
 #include "includeutils.h"
 #include "includeextractor.h"
 #include "includetree.h"
-#include "includetreeapplier.h"
+#include "includemodifier.h"
 
 #include <coreplugin/actionmanager/actionmanager.h>
 #include <coreplugin/actionmanager/actioncontainer.h>
@@ -222,9 +222,10 @@ namespace QtcUtilities {
         tree.removeNestedPaths ();
         qDebug () << "removed nested" << tree.includes ();
 
-        IncludeTreeApplier applier (cppDocument);
-        applier.removeDuplicates ();
-        applier.apply (tree);
+        IncludeModifier modifier (cppDocument);
+        modifier.queueDuplicatesRemoval ();
+        modifier.queueUpdates (tree);
+        modifier.executeQueue ();
 
         return;
 

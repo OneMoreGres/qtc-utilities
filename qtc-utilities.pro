@@ -26,7 +26,7 @@ SOURCES += \
     src/includes/includeutils.cpp \
     src/includes/includetree.cpp \
     src/includes/includeextractor.cpp \
-    src/includes/includetreeapplier.cpp
+    src/includes/includemodifier.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -55,7 +55,7 @@ HEADERS += \
     src/includes/includeutils.h \
     src/includes/includetree.h \
     src/includes/includeextractor.h \
-    src/includes/includetreeapplier.h
+    src/includes/includemodifier.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts
