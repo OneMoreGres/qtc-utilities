@@ -74,6 +74,22 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
   return true;
 }
 
+bool IncludeExtractor::visit (IdExpressionAST *ast) {
+  const auto typeName = overview_ (ast->name->name);
+  if (typeName.isEmpty ()) {
+    return true;
+  }
+  qDebug () << "IdExpressionAST" << typeName;
+
+  const auto scope = scopeAtToken (ast->firstToken ());
+  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
+
+  for (const auto &match: matches) {
+    add (match);
+  }
+
+  return true;
+}
 
 bool IncludeExtractor::visit (CallAST *ast) {
   qDebug () << "CallAST";
@@ -142,6 +158,7 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
   qDebug () <<  " add"
             << overview_ (lookup.type ().type ())
             << "at" << fileName
+            << declaration
             << typeid (*declaration).name ()
             << overview_ (declaration->type ().type ());
 
