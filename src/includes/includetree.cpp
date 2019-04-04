@@ -136,8 +136,13 @@ const QString &IncludeTreeNode::fileName () const {
 }
 
 IncludeTreeNode::Symbols IncludeTreeNode::allSymbols () const {
-  QVector<QString> used;
+  QVector<QString> used; // infinite recursion protection
   return allSymbols (used);
+}
+
+QStringList IncludeTreeNode::allMacros () const {
+  QVector<QString> used; // infinite recursion protection
+  return allMacros (used);
 }
 
 bool IncludeTreeNode::hasChild (const QString &fileName) const {
@@ -169,6 +174,28 @@ IncludeTreeNode::Symbols IncludeTreeNode::allSymbols (QVector<QString> &used) co
   //    return sum + node->allSymbols ();
   //  });
   return result;
+}
+
+QStringList IncludeTreeNode::allMacros (QVector<QString> &used) const {
+  if (used.contains (fileName_)) {
+    return {};
+  }
+
+  used.append (fileName_);
+
+  if (children_.isEmpty ()) {
+    return macros_;
+  }
+
+  auto result = macros_;
+  for (const auto child: children_) {
+    result += child->allMacros (used);
+  }
+  return result;
+}
+
+const QStringList &IncludeTreeNode::macros () const {
+  return macros_;
 }
 
 IncludeTree::IncludeTree (const QString &fileName) :
@@ -219,6 +246,20 @@ void IncludeTree::distribute (const Symbols &symbols) {
   }
 }
 
+void IncludeTree::distribute (const QList<CPlusPlus::Document::MacroUse> &macros) {
+  for (const auto &macro: macros) {
+    const auto fileName = macro.macro ().fileName ();
+    if (!registry_.contains (fileName)) {
+      qDebug () << "not in registry" << fileName
+                << "macro" << macro.macro ().nameToQString ();
+      continue;
+    }
+
+    auto &node = registry_[fileName];
+    node.macros_.append (macro.macro ().toString ());
+  }
+}
+
 void IncludeTree::addNew (const IncludeTree::Symbols &symbols,
                           const CPlusPlus::Snapshot &snapshot) {
   for (const auto symbol: symbols) {
@@ -238,18 +279,27 @@ void IncludeTree::removeEmptyPaths () {
   auto &children = root_.children_;
   children.erase (std::remove_if (children.begin (), children.end (),
                                   [](const IncludeTreeNode *node) {
-    return node->allSymbols ().isEmpty ();
+    return node->allSymbols ().isEmpty () && node->allMacros ().isEmpty ();
   }), children.end ());
 }
 
 void IncludeTree::removeNestedPaths () {
   using Nodes = QVector<const IncludeTreeNode *>;
-  QHash<const CPlusPlus::Symbol *, Nodes> nodePerSymbol;
+  const auto allMacros = root_.allMacros ();
+  QHash<const void *, Nodes> nodePerEntity;
   auto &children = root_.children_;
+
+  const auto macroPointer = [&allMacros](const QString &macro) {
+                              Q_ASSERT (allMacros.contains (macro));
+                              return &allMacros[allMacros.indexOf (macro)];
+                            };
 
   for (const auto child: children) {
     for (const auto symbol: child->allSymbols ()) {
-      nodePerSymbol[symbol].append (child);
+      nodePerEntity[symbol].append (child);
+    }
+    for (const auto macro: child->allMacros ()) {
+      nodePerEntity[macroPointer (macro)].append (child);
     }
   }
 
@@ -262,23 +312,26 @@ void IncludeTree::removeNestedPaths () {
                                 };
 
   QVector<const IncludeTreeNode *> usedNodes;
-  while (!nodePerSymbol.isEmpty ()) {
-    auto unique = std::find_if (nodePerSymbol.cbegin (), nodePerSymbol.cend (),
+  while (!nodePerEntity.isEmpty ()) {
+    auto unique = std::find_if (nodePerEntity.cbegin (), nodePerEntity.cend (),
                                 [](const QVector<const IncludeTreeNode *> &list) {
       return list.size () == 1;
     });
-    if (unique != nodePerSymbol.cend ()) {
+    if (unique != nodePerEntity.cend ()) {
       const auto uniqueNode = unique.value ().first ();
       usedNodes.append (uniqueNode);
       for (auto symbol: uniqueNode->allSymbols ()) {
-        nodePerSymbol.remove (symbol);
+        nodePerEntity.remove (symbol);
+      }
+      for (auto macro: uniqueNode->allMacros ()) {
+        nodePerEntity.remove (macroPointer (macro));
       }
       continue;
     }
 
-    const auto minVariable = std::min_element (nodePerSymbol.cbegin (), nodePerSymbol.cend (),
+    const auto minVariable = std::min_element (nodePerEntity.cbegin (), nodePerEntity.cend (),
                                                compareNodeCount);
-    Q_ASSERT (minVariable != nodePerSymbol.cend ());
+    Q_ASSERT (minVariable != nodePerEntity.cend ());
 
     const auto symbolNodes = minVariable.value ();
     Q_ASSERT (!symbolNodes.isEmpty ());
@@ -290,7 +343,10 @@ void IncludeTree::removeNestedPaths () {
     const auto minNode = *min;
     usedNodes.append (minNode);
     for (auto symbol: minNode->allSymbols ()) {
-      nodePerSymbol.remove (symbol);
+      nodePerEntity.remove (symbol);
+    }
+    for (auto macro: minNode->allMacros ()) {
+      nodePerEntity.remove (macroPointer (macro));
     }
   }
 

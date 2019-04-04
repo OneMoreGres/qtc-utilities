@@ -3,6 +3,8 @@
 #include <QVector>
 #include <QHash>
 
+#include <cplusplus/CppDocument.h>
+
 namespace CPlusPlus {
   class Symbol;
   class Snapshot;
@@ -20,9 +22,11 @@ class IncludeTreeNode {
     uint weight () const;
     const QString &fileName () const;
     Symbols allSymbols () const;
+    QStringList allMacros () const;
     bool hasChild (const QString &fileName) const;
 
     Symbols symbols () const;
+    const QStringList &macros () const;
 
   private:
     friend class IncludeTree;
@@ -32,10 +36,12 @@ class IncludeTreeNode {
     void distribute (const QHash<QString, Symbols > &symbolsPerFile);
     void filterWithChildren (QSet<QString> &files) const;
     Symbols allSymbols (QVector<QString> &used) const;
+    QStringList allMacros (QVector<QString> &used) const;
 
     uint weight_ = 0u;
     QString fileName_;
     Symbols symbols_;
+    QStringList macros_;
     QVector<IncludeTreeNode *> children_;
 };
 
@@ -50,6 +56,7 @@ class IncludeTree {
 
     void build (const CPlusPlus::Snapshot &snapshot);
     void distribute (const Symbols &symbols);
+    void distribute (const QList<CPlusPlus::Document::MacroUse> &macros);
     void addNew (const Symbols &symbols, const CPlusPlus::Snapshot &snapshot);
     void removeEmptyPaths ();
     void removeNestedPaths ();

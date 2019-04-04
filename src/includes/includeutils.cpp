@@ -155,35 +155,58 @@ namespace QtcUtilities {
           return;
         }
 
-        Symbol **end = control->lastSymbol ();
-        uint index = 0;
-        for (Symbol **it = control->firstSymbol (); it != end; ++it) {
-          ++index;
-          qDebug () << "symbol" << index
-                    << (*it)->fileName ()
-                    << (*it)->line ()
-                    << (*it)->column ()
-                    << (*it)->visibility ()
-                    << (*it)->type ().isUnavailable ()
-                    << (*it)->type ()->isUndefinedType ()
-          ;
-          //          if ((*it)->unqualifiedName () && (*it)->unqualifiedName ()->identifier ()) {
-          //            qDebug () << "unqualifiedName"
-          //                      << (*it)->unqualifiedName ()->identifier ()->chars ();
-          //          }
-          if ((*it)->name () && (*it)->name ()->identifier ()) {
-            qDebug () << "name" << (*it)->name ()->identifier ()->chars ();
-          }
-          if ((*it)->identifier ()) {
-            qDebug () << "id" << (*it)->identifier ()->chars ();
-          }
-          //          if (const Function *function = (*it)->asFunction ()) {
-          //          }
+        //        Symbol **end = control->lastSymbol ();
+        //        uint index = 0;
+        //        for (Symbol **it = control->firstSymbol (); it != end; ++it) {
+        //          ++index;
+        //          qDebug () << "symbol" << index
+        //                    << (*it)->fileName ()
+        //                    << (*it)->line ()
+        //                    << (*it)->column ()
+        //                    << (*it)->visibility ()
+        //                    << (*it)->type ().isUnavailable ()
+        //                    << (*it)->type ()->isUndefinedType ()
+        //          ;
+        //          //          if ((*it)->unqualifiedName () && (*it)->unqualifiedName ()->identifier ()) {
+        //          //            qDebug () << "unqualifiedName"
+        //          //                      << (*it)->unqualifiedName ()->identifier ()->chars ();
+        //          //          }
+        //          if ((*it)->name () && (*it)->name ()->identifier ()) {
+        //            qDebug () << "name" << (*it)->name ()->identifier ()->chars ();
+        //          }
+        //          if ((*it)->identifier ()) {
+        //            qDebug () << "id" << (*it)->identifier ()->chars ();
+        //          }
+        //          //          if (const Function *function = (*it)->asFunction ()) {
+        //          //          }
+        //        }
+
+        qDebug () << "macros" << cppDocument->definedMacros ().size ();
+        for (const auto &macro: cppDocument->definedMacros ()) {
+          qDebug () << macro.nameToQString ();
         }
 
         if (cppDocument->fileName ().isEmpty ()) {
           return;
         }
+
+        qDebug () << "macro uses" << cppDocument->macroUses ().size ();
+        for (const auto &macro: cppDocument->macroUses ()) {
+          qDebug () << macro.macro ().nameToQString ();
+        }
+
+        if (cppDocument->fileName ().isEmpty ()) {
+          return;
+        }
+
+        //        qDebug () << "all macros" << model->definedMacros ().size ();
+        //        for (const auto &macro: model->definedMacros ()) {
+        //          qDebug () << macro.key << macro.value;
+        //        }
+
+        //        if (cppDocument->fileName ().isEmpty ()) {
+        //          return;
+        //        }
 
         IncludeExtractor extractor (cppDocument, snapshot, false);
         qDebug () << "current" << cppDocument->fileName ();
@@ -214,8 +237,13 @@ namespace QtcUtilities {
         //        return;
 
         tree.distribute (extractor.symbols ());
-        qDebug () << "distributed" << tree.root ().allSymbols ().size ()
+        qDebug () << "distributed symbols" << tree.root ().allSymbols ().size ()
                   << "from" << extractor.symbols ().size ();
+
+        tree.distribute (cppDocument->macroUses ());
+        qDebug () << "distributed macros" << tree.root ().allMacros ()
+                  << "from" << cppDocument->macroUses ().size ();
+
         tree.removeEmptyPaths ();
         qDebug () << "removed empty" << tree.includes ();
 
