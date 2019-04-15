@@ -175,7 +175,7 @@ namespace QtcUtilities {
             for (uint i = 0, end = c->baseClassCount (); i < end; ++i) {
               auto *base = c->baseClassAt (i);
               if (auto *s = find (o_ (base->name ()), base)) {
-                addToSelectedHierarchy (s);
+                addToSelectedHierarchy (TypeHierarchy (s));
               }
             }
           }
@@ -221,7 +221,7 @@ namespace QtcUtilities {
           for (uint i = 0, end = c->baseClassCount (); i < end; ++i) {
             auto *base = c->baseClassAt (i);
             if (auto *processible = find (o_ (base->name ()), base)) {
-              processHierarchy (processible);
+              processHierarchy (TypeHierarchy (processible));
               relations_ << relation (processible, Extension, c);
             }
           }
@@ -380,7 +380,7 @@ namespace QtcUtilities {
         }
 
         if ((flags_ & ShowNested) && isClassLike (s)) {
-          processHierarchy (s);
+          processHierarchy (TypeHierarchy (s));
           relations_ << relation (s, Association, s->enclosingClass (),
                                   QStringLiteral ("nested >"));
           return {};
@@ -397,7 +397,7 @@ namespace QtcUtilities {
           if (flags_ & ShowSameProjectSymbols && !fromSameProject (d)) {
             return;
           }
-          processHierarchy (d, true);
+          processHierarchy (TypeHierarchy (d), true);
           relations_ << relation (d, Dependency, dependant);
         }
 
@@ -408,7 +408,7 @@ namespace QtcUtilities {
             auto arguments = dependency.mid (begin + 1, end - begin - 1);
             for (const auto &i: arguments.split (QStringLiteral (","))) {
               if (auto *processable = find (i, scope)) {
-                processHierarchy (processable);
+                processHierarchy (TypeHierarchy (processable));
                 relations_ << relation (processable, Dependency, dependant);
               }
             }
