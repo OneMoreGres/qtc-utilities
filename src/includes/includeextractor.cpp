@@ -80,7 +80,7 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
     add (match);
 
     expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
-    accept (expressionType_.ast ()); // TODO via addExpression?
+    accept (expressionType_.ast ());
   }
 
   return true;
@@ -108,7 +108,7 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
     if (!noRecursion) {
       noRecursion = true;
       expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
-      accept (expressionType_.ast ()); // TODO via addExpression?
+      accept (expressionType_.ast ());
       noRecursion = false;
     }
   }
@@ -293,9 +293,10 @@ void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
   qDebug () << "addExpression" << callName;
 
   const auto matches = expressionType_ (ast, document_, scope);
-  for (const auto &match: matches) {
-    add (match);
-  }
+  accept (expressionType_.ast ());
+  //  for (const auto &match: matches) {
+  //    add (match);
+  //  }
 
   //  if (!addTypedItems (matches, callName, scope) && !callName.isEmpty ()
   //      && !ast->asMemberAccess ()) {
