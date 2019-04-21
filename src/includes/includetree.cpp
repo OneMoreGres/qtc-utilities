@@ -48,6 +48,7 @@ void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegist
     }
 
     auto child = &registry[include];
+    weight_ += child->weight ();
     children_.append (child);
     //    weight_ += child->weight ();
 
