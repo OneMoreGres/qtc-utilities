@@ -41,10 +41,10 @@ void IncludeExtractor::initLocatorFilter () {
 
 bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
   const auto typeName = overview_ (ast->name->name);
+  qDebug () << "NamedTypeSpecifierAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
-  qDebug () << "NamedTypeSpecifierAST" << typeName;
 
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
@@ -59,33 +59,46 @@ bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
 
 bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
   const auto typeName = overview_ (ast->name->name);
+  qDebug () << "DeclaratorIdAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
-  qDebug () << "DeclaratorIdAST" << typeName;
 
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
   for (const auto &match: matches) {
+    qDebug () << overview_ (match.type ()) << match.declaration ();
     add (match);
+
+    expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
+    accept (expressionType_.ast ());
   }
 
   return true;
 }
 
 bool IncludeExtractor::visit (IdExpressionAST *ast) {
+  static auto noRecursion = false;
   const auto typeName = overview_ (ast->name->name);
+  qDebug () << "IdExpressionAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
-  qDebug () << "IdExpressionAST" << typeName;
 
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
   for (const auto &match: matches) {
+    qDebug () << overview_ (match.type ()) << match.declaration ();
     add (match);
+
+    if (!noRecursion) {
+      noRecursion = true;
+      expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
+      accept (expressionType_.ast ());
+      noRecursion = false;
+    }
   }
 
   return true;
@@ -101,6 +114,23 @@ bool IncludeExtractor::visit (CallAST *ast) {
   while (expression) {
     addExpression (expression->value, scope);
     expression = expression->next;
+  }
+
+  return true;
+}
+
+bool IncludeExtractor::visit (TemplateIdAST *ast) {
+  const auto typeName = overview_ (ast->name);
+  qDebug () << "TemplateIdAST" << typeName;
+  if (typeName.isEmpty ()) {
+    return true;
+  }
+
+  const auto scope = scopeAtToken (ast->firstToken ());
+  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
+
+  for (const auto &match: matches) {
+    add (match);
   }
 
   return true;
@@ -145,10 +175,6 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
       || document_->fileName () == QString::fromUtf8 (declaration->fileName ())) {
     return false;
   }
-  //  if (!declaration
-  //      || declaration->isForwardClassDeclaration ()) {
-  //    return false;
-  //  }
 
   QTC_ASSERT (declaration->fileName (), return false);
   const auto fileName = QString::fromUtf8 (declaration->fileName ());
