@@ -67,8 +67,8 @@ void IncludeModifier::removeIncludeAt (int line) {
   auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
   linesToRemove_.append (line);
   while (true) {
-    --line;
-    c.movePosition (QTextCursor::Up);
+    ++line;
+    c.movePosition (QTextCursor::Down);
     if (!c.block ().text ().isEmpty ()) {
       break;
     }
