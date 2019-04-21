@@ -136,6 +136,23 @@ bool IncludeExtractor::visit (TemplateIdAST *ast) {
   return true;
 }
 
+bool IncludeExtractor::visit (UsingDirectiveAST *ast) {
+  const auto typeName = overview_ (ast->name->name);
+  qDebug () << "UsingDirectiveAST" << typeName;
+  if (typeName.isEmpty ()) {
+    return true;
+  }
+
+  const auto scope = scopeAtToken (ast->firstToken ());
+  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
+
+  for (const auto &match: matches) {
+    add (match);
+  }
+
+  return true;
+}
+
 Scope *IncludeExtractor::scopeAtToken (unsigned token) const {
   QTC_ASSERT (translationUnit (), return nullptr);
   unsigned line = 0;
