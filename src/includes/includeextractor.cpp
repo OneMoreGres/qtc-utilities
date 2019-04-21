@@ -49,7 +49,11 @@ bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
+  const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
+    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
+      continue;
+    }
     add (match);
   }
 
@@ -67,12 +71,16 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
+  const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
     qDebug () << overview_ (match.type ()) << match.declaration ();
+    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
+      continue;
+    }
     add (match);
 
     expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
-    accept (expressionType_.ast ());
+    accept (expressionType_.ast ()); // TODO via addExpression?
   }
 
   return true;
@@ -89,14 +97,18 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
+  const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
     qDebug () << overview_ (match.type ()) << match.declaration ();
+    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
+      continue;
+    }
     add (match);
 
     if (!noRecursion) {
       noRecursion = true;
       expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
-      accept (expressionType_.ast ());
+      accept (expressionType_.ast ()); // TODO via addExpression?
       noRecursion = false;
     }
   }
@@ -128,8 +140,12 @@ bool IncludeExtractor::visit (TemplateIdAST *ast) {
 
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
+  const auto hasNonForward = hasNonForwardDeclaration (matches);
 
   for (const auto &match: matches) {
+    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
+      continue;
+    }
     add (match);
   }
 
@@ -285,6 +301,14 @@ void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
   //      && !ast->asMemberAccess ()) {
   //    addViaLocator (callName, IndexItem::All);
   //  }
+}
+
+bool IncludeExtractor::hasNonForwardDeclaration (const QList<LookupItem> &matches) const {
+  auto ok = false;
+  for (const auto &i: matches) {
+    ok |= (i.declaration () && !i.declaration ()->isForwardClassDeclaration ());
+  }
+  return ok;
 }
 
 void IncludeExtractor::addViaLocator (const QString &name, int types) {

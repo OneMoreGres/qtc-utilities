@@ -35,6 +35,7 @@ class IncludeExtractor : public CPlusPlus::ASTVisitor {
     //    bool addType (const QString &typeName, CPlusPlus::Scope *scope);
     //    bool addTypedItems (const QList<CPlusPlus::LookupItem> &items,
     //                        const QString &name, CPlusPlus::Scope *scope);
+    bool hasNonForwardDeclaration (const QList<CPlusPlus::LookupItem> &matches) const;
 
   private:
     CPlusPlus::Document::Ptr document_;
