@@ -64,15 +64,28 @@ void IncludeModifier::executeQueue () {
 }
 
 void IncludeModifier::removeIncludeAt (int line) {
-  auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
   linesToRemove_.append (line);
+  if (!isGroupRemoved (line)) {
+    return;
+  }
+
+  auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
+  auto inBlock = true;
   while (true) {
     ++line;
-    c.movePosition (QTextCursor::Down);
-    if (!c.block ().text ().isEmpty ()) {
+    if (!c.movePosition (QTextCursor::Down)) {
       break;
     }
-    linesToRemove_.append (line);
+    if (!c.block ().text ().isEmpty ()) {
+      if (inBlock) {
+        continue;
+      }
+      break;
+    }
+    else {
+      inBlock = false;
+      linesToRemove_.append (line);
+    }
   }
 }
 
@@ -95,4 +108,39 @@ void IncludeModifier::unfoldDocument () {
       TextEditor::TextDocumentLayout::doFoldOrUnfold (block, true);
     }
   }
+}
+
+bool IncludeModifier::isGroupRemoved (int line) const {
+  auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
+
+  while (true) {
+    ++line;
+    if (!c.movePosition (QTextCursor::Down)) {
+      break;
+    }
+    if (c.block ().text ().isEmpty ()) {
+      break;
+    }
+    if (linesToRemove_.contains (line)) {
+      continue;
+    }
+    return false;
+  }
+
+  c = QTextCursor (textDocument_->findBlockByLineNumber (line));
+  while (true) {
+    --line;
+    if (!c.movePosition (QTextCursor::Up)) {
+      break;
+    }
+    if (c.block ().text ().isEmpty ()) {
+      break;
+    }
+    if (linesToRemove_.contains (line)) {
+      continue;
+    }
+    return false;
+  }
+
+  return true;
 }

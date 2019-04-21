@@ -20,9 +20,11 @@ class IncludeModifier {
     void removeIncludeAt (int line);
     void removeNewLinesBefore (int line);
     void unfoldDocument ();
+    bool isGroupRemoved (int line) const;
 
     CPlusPlus::Document::Ptr document_;
     QTextDocument *textDocument_;
     QVector<int> linesToRemove_;
+    QVector<QPair<int, int> > includeGroups_;
 };
 
