@@ -87,7 +87,6 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
 }
 
 bool IncludeExtractor::visit (IdExpressionAST *ast) {
-  static auto noRecursion = false;
   const auto typeName = overview_ (ast->name->name);
   qDebug () << "IdExpressionAST" << typeName;
   if (typeName.isEmpty ()) {
@@ -97,21 +96,39 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
+  static QMap<QString, Scope *> typesToExpand;
+  const auto isFirstLevel = typesToExpand.isEmpty ();
+
   const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
-    qDebug () << "IdExpressionAST match" << overview_ (match.type ()) << match.declaration ();
-    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
+    qDebug () << "IdExpressionAST match" << overview_ (match.type ())
+              << match.declaration () << hasNonForward
+              << match.type ().isTypedef () << isFirstLevel;
+    if (hasNonForward
+        && match.declaration ()->isForwardClassDeclaration ()
+        && !match.type ().isTypedef ()) {
       continue;
     }
     add (match);
 
-    if (!noRecursion) {
-      noRecursion = true;
-      expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
+    typesToExpand.insert (overview_ (match.type ()), match.scope ());
+  }
+
+  if (!isFirstLevel) {
+    return true;
+  }
+
+  while (true) {
+    const auto localCopy = typesToExpand;
+    for (auto it = localCopy.cbegin (), end = localCopy.cend (); it != end; ++it) {
+      expressionType_ (it.key ().toUtf8 (), it.value ());
       accept (expressionType_.ast ());
-      noRecursion = false;
+    }
+    if (localCopy.size () == typesToExpand.size ()) {
+      break;
     }
   }
+  typesToExpand.clear ();
 
   return true;
 }
