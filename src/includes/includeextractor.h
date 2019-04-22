@@ -19,6 +19,7 @@ class IncludeExtractor : public CPlusPlus::ASTVisitor {
     bool visit (CPlusPlus::CallAST *) override;
     bool visit (CPlusPlus::TemplateIdAST *) override;
     bool visit (CPlusPlus::UsingDirectiveAST *) override;
+    bool visit (CPlusPlus::MemberAccessAST *) override;
 
     const QSet<QString> &includes () const;
     const QSet<CPlusPlus::Symbol *> &symbols () const {

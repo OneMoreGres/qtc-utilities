@@ -99,7 +99,7 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
 
   const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
-    qDebug () << overview_ (match.type ()) << match.declaration ();
+    qDebug () << "IdExpressionAST match" << overview_ (match.type ()) << match.declaration ();
     if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
       continue;
     }
@@ -124,6 +124,7 @@ bool IncludeExtractor::visit (CallAST *ast) {
 
   auto expression = ast->expression_list;
   while (expression) {
+    qDebug () << "CallAST expression_list";
     addExpression (expression->value, scope);
     expression = expression->next;
   }
@@ -162,6 +163,22 @@ bool IncludeExtractor::visit (UsingDirectiveAST *ast) {
   const auto scope = scopeAtToken (ast->firstToken ());
   const auto matches = expressionType_ (typeName.toUtf8 (), scope);
 
+  for (const auto &match: matches) {
+    add (match);
+  }
+
+  return true;
+}
+
+bool IncludeExtractor::visit (MemberAccessAST *ast) {
+  const auto typeName = overview_ (ast->member_name->name);
+  qDebug () << "MemberAccessAST" << typeName;
+  if (typeName.isEmpty ()) {
+    return true;
+  }
+
+  const auto scope = scopeAtToken (ast->firstToken ());
+  const auto matches = expressionType_ (ast, document_, scope);
   for (const auto &match: matches) {
     add (match);
   }
