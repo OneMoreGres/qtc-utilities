@@ -73,13 +73,23 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
 
   const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
+    const auto matchType = overview_ (match.type ());
     qDebug () << overview_ (match.type ()) << match.declaration ();
     if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
       continue;
     }
     add (match);
 
-    expressionType_ (overview_ (match.type ()).toUtf8 (), match.scope ());
+    if (matchType.isEmpty ()) {
+      continue;
+    }
+
+    const auto matches = expressionType_ (matchType.toUtf8 (), match.scope ());
+    for (const auto &match: matches) {
+      add (match);
+    }
+
+    expressionType_ (matchType.toUtf8 (), match.scope ());
     accept (expressionType_.ast ());
   }
 
@@ -328,9 +338,9 @@ void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
 
   const auto matches = expressionType_ (ast, document_, scope);
   accept (expressionType_.ast ());
-  //  for (const auto &match: matches) {
-  //    add (match);
-  //  }
+  for (const auto &match: matches) {
+    add (match);
+  }
 
   //  if (!addTypedItems (matches, callName, scope) && !callName.isEmpty ()
   //      && !ast->asMemberAccess ()) {
