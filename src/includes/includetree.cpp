@@ -11,29 +11,29 @@ IncludeTreeNode::IncludeTreeNode (const QString &fileName) :
 }
 
 void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegistry &registry) {
-  //  qDebug () << "expand" << fileName_;
+  //  qCritical () << "expand" << fileName_;
   auto document = snapshot.document (fileName_);
   if (!document) {
     // TODO parse?
-    qDebug () << "no document for" << fileName_;
+    qCritical () << "no document for" << fileName_;
     QFile file (fileName_);
     weight_ = file.size ();
     return;
   }
 
   if (!document->isParsed ()) {
-    qDebug () << "not parsed";
+    qCritical () << "not parsed";
     document->parse ();
   }
   if (!document->utf8Source ().isEmpty ()) {
-    qDebug () << "got source";
+    qCritical () << "got source";
     weight_ = document->utf8Source ().size ();
   }
   else {
     QFile file (fileName_);
     weight_ = file.size ();
   }
-  //  qDebug () << fileName_ << "init weight" << weight_;
+  //  qCritical () << fileName_ << "init weight" << weight_;
 
   auto includes = document->includedFiles ();
   includes.removeDuplicates ();
@@ -43,7 +43,7 @@ void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegist
     if (!registry.contains (include)) {
       auto &child = registry[include];
       child.fileName_ = include;
-      //      qDebug () << fileName_ << "called expand for" << include;
+      //      qCritical () << fileName_ << "called expand for" << include;
       child.expand (snapshot, registry);
     }
 
@@ -52,7 +52,7 @@ void IncludeTreeNode::expand (const CPlusPlus::Snapshot &snapshot, IncludeRegist
     children_.append (child);
     //    weight_ += child->weight ();
 
-    //    qDebug () << fileName_ << "weight with include" << include << weight_;
+    //    qCritical () << fileName_ << "weight with include" << include << weight_;
     //    auto child = IncludeTreeNode (include);
     //    child.expand (snapshot, registry);
     //    weight_ += child.weight ();
@@ -238,7 +238,7 @@ void IncludeTree::distribute (const Symbols &symbols) {
   for (const auto symbol: symbols) {
     const auto fileName = QString::fromUtf8 (symbol->fileName ());
     if (!registry_.contains (fileName)) {
-      qDebug () << "not in registry" << fileName;
+      qCritical () << "not in registry" << fileName;
       continue;
     }
 
@@ -251,8 +251,8 @@ void IncludeTree::distribute (const QList<CPlusPlus::Document::MacroUse> &macros
   for (const auto &macro: macros) {
     const auto fileName = macro.macro ().fileName ();
     if (!registry_.contains (fileName)) {
-      qDebug () << "not in registry" << fileName
-                << "macro" << macro.macro ().nameToQString ();
+      qCritical () << "not in registry" << fileName
+                   << "macro" << macro.macro ().nameToQString ();
       continue;
     }
 

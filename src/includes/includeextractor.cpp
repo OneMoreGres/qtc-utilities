@@ -41,7 +41,7 @@ void IncludeExtractor::initLocatorFilter () {
 
 bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
   const auto typeName = overview_ (ast->name->name);
-  qDebug () << "NamedTypeSpecifierAST" << typeName;
+  qCritical () << "NamedTypeSpecifierAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -63,7 +63,7 @@ bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
 
 bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
   const auto typeName = overview_ (ast->name->name);
-  qDebug () << "DeclaratorIdAST" << typeName;
+  qCritical () << "DeclaratorIdAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -74,7 +74,7 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
   const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
     const auto matchType = overview_ (match.type ());
-    qDebug () << overview_ (match.type ()) << match.declaration ();
+    qCritical () << matchType << match.declaration ();
     if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
       continue;
     }
@@ -98,7 +98,7 @@ bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
 
 bool IncludeExtractor::visit (IdExpressionAST *ast) {
   const auto typeName = overview_ (ast->name->name);
-  qDebug () << "IdExpressionAST" << typeName;
+  qCritical () << "IdExpressionAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -111,9 +111,9 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
 
   const auto hasNonForward = hasNonForwardDeclaration (matches);
   for (const auto &match: matches) {
-    qDebug () << "IdExpressionAST match" << overview_ (match.type ())
-              << match.declaration () << hasNonForward
-              << match.type ().isTypedef () << isFirstLevel;
+    qCritical () << "IdExpressionAST match" << overview_ (match.type ())
+                 << match.declaration () << hasNonForward
+                 << match.type ().isTypedef () << isFirstLevel;
     if (hasNonForward
         && match.declaration ()->isForwardClassDeclaration ()
         && !match.type ().isTypedef ()) {
@@ -144,14 +144,14 @@ bool IncludeExtractor::visit (IdExpressionAST *ast) {
 }
 
 bool IncludeExtractor::visit (CallAST *ast) {
-  qDebug () << "CallAST";
+  qCritical () << "CallAST";
   const auto scope = scopeAtToken (ast->firstToken ());
   QTC_ASSERT (ast->base_expression, return true);
   addExpression (ast->base_expression, scope);
 
   auto expression = ast->expression_list;
   while (expression) {
-    qDebug () << "CallAST expression_list";
+    qCritical () << "CallAST expression_list";
     addExpression (expression->value, scope);
     expression = expression->next;
   }
@@ -161,7 +161,7 @@ bool IncludeExtractor::visit (CallAST *ast) {
 
 bool IncludeExtractor::visit (TemplateIdAST *ast) {
   const auto typeName = overview_ (ast->name);
-  qDebug () << "TemplateIdAST" << typeName;
+  qCritical () << "TemplateIdAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -182,7 +182,7 @@ bool IncludeExtractor::visit (TemplateIdAST *ast) {
 
 bool IncludeExtractor::visit (UsingDirectiveAST *ast) {
   const auto typeName = overview_ (ast->name->name);
-  qDebug () << "UsingDirectiveAST" << typeName;
+  qCritical () << "UsingDirectiveAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -199,7 +199,7 @@ bool IncludeExtractor::visit (UsingDirectiveAST *ast) {
 
 bool IncludeExtractor::visit (MemberAccessAST *ast) {
   const auto typeName = overview_ (ast->member_name->name);
-  qDebug () << "MemberAccessAST" << typeName;
+  qCritical () << "MemberAccessAST" << typeName;
   if (typeName.isEmpty ()) {
     return true;
   }
@@ -239,7 +239,7 @@ QString IncludeExtractor::fileNameViaLocator (const QString &name, int types) {
 
     if (match != matches.end ()) {
       auto item = (*match).internalData.value<IndexItem::Ptr>();
-      qDebug () << "found via locator" << item->scopedSymbolName () << item->fileName ();
+      qCritical () << "found via locator" << item->scopedSymbolName () << item->fileName ();
       return item->fileName ();
     }
   }
@@ -258,12 +258,12 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
   includes_.insert (fileName);
   symbols_.insert (declaration);
 
-  qDebug () <<  " add"
-            << overview_ (lookup.type ().type ())
-            << "at" << fileName
-            << declaration
-            << typeid (*declaration).name ()
-            << overview_ (declaration->type ().type ());
+  qCritical () <<  " add"
+               << overview_ (lookup.type ().type ())
+               << "at" << fileName
+               << declaration
+               << typeid (*declaration).name ()
+               << overview_ (declaration->type ().type ());
 
   return true;
 }
@@ -286,7 +286,7 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
 //    includes_.insert (fileName);
 //    added = true;
 
-//    qDebug () <<  " found type" << typeName << "at" << fileName
+//    qCritical () <<  " found type" << typeName << "at" << fileName
 //              << overview_ (match.type ().type ())
 //              << overview_ (declaration->type ().type ());
 //    if (declaration->isTemplate ()) {
@@ -312,7 +312,7 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
 //    includes_.insert (fileName);
 //    added = true;
 
-//    qDebug () <<  " found" << name << "at" << fileName;
+//    qCritical () <<  " found" << name << "at" << fileName;
 //    auto typeName = overview_ (match.type ().type ());
 //    if (!typeName.isEmpty ()) {
 //      addType (typeName, scope);
@@ -334,7 +334,7 @@ void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
   else if (auto e = ast->asMemberAccess ()) {
     callName = overview_ (e->member_name->name);
   }
-  qDebug () << "addExpression" << callName;
+  qCritical () << "addExpression" << callName;
 
   const auto matches = expressionType_ (ast, document_, scope);
   accept (expressionType_.ast ());

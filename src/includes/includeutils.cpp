@@ -54,7 +54,7 @@ namespace QtcUtilities {
 
           auto doc = editorWidget->textDocument ();
           auto block = doc->document ()->findBlock (pos);
-          //          qDebug () << block.text ()
+          //          qCritical () << block.text ()
           //                    << doc->filePath ();
           if (!block.text ().startsWith ("#include")) {
             return;
@@ -66,12 +66,12 @@ namespace QtcUtilities {
           auto snapshot = model->snapshot ();
           auto cppDocument = snapshot.document (doc->filePath ().toString ());
           if (!cppDocument) {
-            qDebug () << "parse failed" << cppDocument;
+            qCritical () << "parse failed" << cppDocument;
             return;
           }
 
           for (const auto &inc: cppDocument->resolvedIncludes ()) {
-            //            qDebug () << inc.resolvedFileName () << inc.line () << inc.unresolvedFileName () << line;
+            //            qCritical () << inc.resolvedFileName () << inc.line () << inc.unresolvedFileName () << line;
             if (inc.line () != line) {
               continue;
             }
@@ -95,7 +95,7 @@ namespace QtcUtilities {
           //                                                            documentFile);
 
           //          const auto line = editorWidget->textAt (pos - 100, pos + 100);
-          //          qDebug () << line;
+          //          qCritical () << line;
           //          setToolTip (line);
 
           //          const auto current = Core::EditorManager::currentDocument ();
@@ -138,7 +138,7 @@ namespace QtcUtilities {
         auto cppDocument = snapshot.preprocessedDocument (current->contents (),
                                                           documentFile);
         if (!cppDocument || !cppDocument->parse ()) {
-          qDebug () << "parse failed";
+          qCritical () << "parse failed";
           return;
         }
         cppDocument->check ();
@@ -146,12 +146,12 @@ namespace QtcUtilities {
 
         auto control = cppDocument->control ();
         if (control->symbolCount () == 0) {
-          qDebug () << "no symbols";
+          qCritical () << "no symbols";
           return;
         }
-        qDebug () << "symbols count" << control->symbolCount ();
+        qCritical () << "symbols count" << control->symbolCount ();
         if (!control->firstSymbol ()) {
-          qDebug () << "no first symbol";
+          qCritical () << "no first symbol";
           return;
         }
 
@@ -159,7 +159,7 @@ namespace QtcUtilities {
         //        uint index = 0;
         //        for (Symbol **it = control->firstSymbol (); it != end; ++it) {
         //          ++index;
-        //          qDebug () << "symbol" << index
+        //          qCritical () << "symbol" << index
         //                    << (*it)->fileName ()
         //                    << (*it)->line ()
         //                    << (*it)->column ()
@@ -168,40 +168,40 @@ namespace QtcUtilities {
         //                    << (*it)->type ()->isUndefinedType ()
         //          ;
         //          //          if ((*it)->unqualifiedName () && (*it)->unqualifiedName ()->identifier ()) {
-        //          //            qDebug () << "unqualifiedName"
+        //          //            qCritical () << "unqualifiedName"
         //          //                      << (*it)->unqualifiedName ()->identifier ()->chars ();
         //          //          }
         //          if ((*it)->name () && (*it)->name ()->identifier ()) {
-        //            qDebug () << "name" << (*it)->name ()->identifier ()->chars ();
+        //            qCritical () << "name" << (*it)->name ()->identifier ()->chars ();
         //          }
         //          if ((*it)->identifier ()) {
-        //            qDebug () << "id" << (*it)->identifier ()->chars ();
+        //            qCritical () << "id" << (*it)->identifier ()->chars ();
         //          }
         //          //          if (const Function *function = (*it)->asFunction ()) {
         //          //          }
         //        }
 
-        qDebug () << "macros" << cppDocument->definedMacros ().size ();
+        qCritical () << "macros" << cppDocument->definedMacros ().size ();
         for (const auto &macro: cppDocument->definedMacros ()) {
-          qDebug () << macro.nameToQString ();
+          qCritical () << macro.nameToQString ();
         }
 
         if (cppDocument->fileName ().isEmpty ()) {
           return;
         }
 
-        qDebug () << "macro uses" << cppDocument->macroUses ().size ();
+        qCritical () << "macro uses" << cppDocument->macroUses ().size ();
         for (const auto &macro: cppDocument->macroUses ()) {
-          qDebug () << macro.macro ().nameToQString ();
+          qCritical () << macro.macro ().nameToQString ();
         }
 
         if (cppDocument->fileName ().isEmpty ()) {
           return;
         }
 
-        //        qDebug () << "all macros" << model->definedMacros ().size ();
+        //        qCritical () << "all macros" << model->definedMacros ().size ();
         //        for (const auto &macro: model->definedMacros ()) {
-        //          qDebug () << macro.key << macro.value;
+        //          qCritical () << macro.key << macro.value;
         //        }
 
         //        if (cppDocument->fileName ().isEmpty ()) {
@@ -209,22 +209,22 @@ namespace QtcUtilities {
         //        }
 
         IncludeExtractor extractor (cppDocument, snapshot, false);
-        qDebug () << "current" << cppDocument->fileName ();
+        qCritical () << "current" << cppDocument->fileName ();
         IncludeTree tree (cppDocument->fileName ());
         tree.build (snapshot);
-        qDebug () << "was" << tree.includes ();
+        qCritical () << "was" << tree.includes ();
 
 
 
         //        for (const auto &inc: cppDocument->resolvedIncludes ()) {
         //          const auto node = tree.node (inc.resolvedFileName ());
         //          //          using Diag = Document::DiagnosticMessage;
-        //          //          qDebug () << "diag" << node.fileName () << node.weight ()
+        //          //          qCritical () << "diag" << node.fileName () << node.weight ()
         //          //                    << inc.resolvedFileName ();
         //          const auto weight = tree.totalWeight (snapshot.allIncludesForDocument (cppDocument->fileName ()));
         //          const QString str =
         //            "Weight " + QString::number (weight / 1024., 'f', 1) + " Kb";
-        //          qDebug () << str << node.fileName ();
+        //          qCritical () << str << node.fileName ();
         //          //                  auto mark = new TextEditor::TextMark (
         //          //                    Utils::FileName::fromString (cppDocument->fileName ()),
         //          //                    inc.line (), "INC.INCLUDES.WEIGHT");
@@ -237,18 +237,18 @@ namespace QtcUtilities {
         //        return;
 
         tree.distribute (extractor.symbols ());
-        qDebug () << "distributed symbols" << tree.root ().allSymbols ().size ()
-                  << "from" << extractor.symbols ().size ();
+        qCritical () << "distributed symbols" << tree.root ().allSymbols ().size ()
+                     << "from" << extractor.symbols ().size ();
 
         tree.distribute (cppDocument->macroUses ());
-        qDebug () << "distributed macros" << tree.root ().allMacros ()
-                  << "from" << cppDocument->macroUses ().size ();
+        qCritical () << "distributed macros" << tree.root ().allMacros ()
+                     << "from" << cppDocument->macroUses ().size ();
 
         tree.removeEmptyPaths ();
-        qDebug () << "removed empty" << tree.includes ();
+        qCritical () << "removed empty" << tree.includes ();
 
         tree.removeNestedPaths ();
-        qDebug () << "removed nested" << tree.includes ();
+        qCritical () << "removed nested" << tree.includes ();
 
         IncludeModifier modifier (cppDocument);
         modifier.queueDuplicatesRemoval ();
@@ -261,16 +261,16 @@ namespace QtcUtilities {
         //        uint index = 0;
         //        while (symbol) {
         //          ++index;
-        //          qDebug () << "symbol" << index
+        //          qCritical () << "symbol" << index
         //                    << symbol->fileName ()
         //                    << symbol->line ()
         //                    << symbol->column ()
         //                    << symbol->visibility ();
         //          if (symbol->name () && symbol->name ()->identifier ()) {
-        //            qDebug () << "name" << symbol->name ()->identifier ()->chars ();
+        //            qCritical () << "name" << symbol->name ()->identifier ()->chars ();
         //          }
         //          if (symbol->identifier ()) {
-        //            qDebug () << "id" << symbol->identifier ()->chars ();
+        //            qCritical () << "id" << symbol->identifier ()->chars ();
         //          }
         //          symbol = symbol->next ();
         //        }
@@ -278,12 +278,12 @@ namespace QtcUtilities {
         //        auto first = *control->firstSymbol ();
         //        for (auto i = 0u, end = control->symbolCount (); i < end; ++i) {
         //          auto s = first + i;
-        //          qDebug () << "symbol" << i;
+        //          qCritical () << "symbol" << i;
         //          if (s->name () && s->name ()->identifier ()) {
-        //            qDebug () << "name" << s->name ()->identifier ()->chars ();
+        //            qCritical () << "name" << s->name ()->identifier ()->chars ();
         //          }
         //          if (symbol->identifier ()) {
-        //            qDebug () << "id" << s->identifier ()->chars ();
+        //            qCritical () << "id" << s->identifier ()->chars ();
         //          }
         //        }
       }

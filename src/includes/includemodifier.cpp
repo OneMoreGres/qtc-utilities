@@ -15,16 +15,19 @@
 
 IncludeModifier::IncludeModifier (CPlusPlus::Document::Ptr document) :
   document_ (document) {
+  qCritical () << "IncludeModifier for document" << document_->fileName ();
 
   auto editor = qobject_cast<TextEditor::BaseTextEditor *>(
     Core::EditorManager::openEditor (document_->fileName ()));
   if (editor) {
+    qCritical () << "IncludeModifier opened editor" << editor->document ()->filePath ();
     textDocument_ = editor->textDocument ()->document ();
   }
   unfoldDocument ();
 }
 
 void IncludeModifier::queueDuplicatesRemoval () {
+  qCritical () << "queueDuplicatesRemoval";
   QTC_ASSERT (document_, return );
   QSet<QString> used;
   for (const auto &include: document_->resolvedIncludes ()) {
@@ -35,25 +38,31 @@ void IncludeModifier::queueDuplicatesRemoval () {
       used.insert (include.resolvedFileName ());
       continue;
     }
-    qDebug () << "remove duplicate" << include.line () << include.unresolvedFileName ();
+    qCritical () << "remove duplicate" << include.line () << include.unresolvedFileName ();
     removeIncludeAt (include.line () - 1);
   }
 }
 
 void IncludeModifier::queueUpdates (const IncludeTree &tree) {
   const auto become = tree.includes ();
+  qCritical () << "queueUpdates. Used" << become;
   for (const auto &include: document_->resolvedIncludes ()) {
     if (include.line () < 1) {
       continue;
     }
+    qCritical () << "resolved include of" << document_->fileName ()
+                 << include.resolvedFileName () << include.unresolvedFileName ()
+                 << include.line ();
     if (!become.contains (include.resolvedFileName ())) {
-      qDebug () << "remove include" << include.line () << include.unresolvedFileName ();
+      qCritical () << "remove include" << include.line () << include.unresolvedFileName ()
+                   << include.resolvedFileName ();
       removeIncludeAt (include.line () - 1);
     }
   }
 }
 
 void IncludeModifier::executeQueue () {
+  qCritical () << "executeQueue";
   std::sort (linesToRemove_.begin (), linesToRemove_.end (), std::greater<int>());
   for (auto line: linesToRemove_) {
     auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
