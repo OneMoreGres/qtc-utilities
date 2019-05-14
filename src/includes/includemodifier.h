@@ -21,6 +21,7 @@ class IncludeModifier {
     void removeNewLinesBefore (int line);
     void unfoldDocument ();
     bool isGroupRemoved (int line) const;
+    void removeTillNextGroup (int line);
 
     CPlusPlus::Document::Ptr document_;
     QTextDocument *textDocument_;

@@ -55,12 +55,7 @@ void IncludeModifier::queueUpdates (const IncludeTree &tree) {
 
 void IncludeModifier::executeQueue () {
   std::sort (linesToRemove_.begin (), linesToRemove_.end (), std::greater<int>());
-  auto prev = 0;
   for (auto line: linesToRemove_) {
-    if (line == prev) {
-      continue;
-    }
-    prev = line;
     auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
     c.select (QTextCursor::LineUnderCursor);
     c.removeSelectedText ();
@@ -71,10 +66,12 @@ void IncludeModifier::executeQueue () {
 
 void IncludeModifier::removeIncludeAt (int line) {
   linesToRemove_.append (line);
-  if (!isGroupRemoved (line)) {
-    return;
+  if (isGroupRemoved (line)) {
+    removeTillNextGroup (line);
   }
+}
 
+void IncludeModifier::removeTillNextGroup (int line) {
   auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
   auto inBlock = true;
   while (true) {
@@ -88,10 +85,8 @@ void IncludeModifier::removeIncludeAt (int line) {
       }
       break;
     }
-    else {
-      inBlock = false;
-      linesToRemove_.append (line);
-    }
+    inBlock = false;
+    linesToRemove_.append (line);
   }
 }
 
