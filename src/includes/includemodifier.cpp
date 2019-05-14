@@ -99,18 +99,6 @@ void IncludeModifier::removeTillNextGroup (int line) {
   }
 }
 
-void IncludeModifier::removeNewLinesBefore (int line) {
-  auto c = QTextCursor (textDocument_->findBlockByLineNumber (line));
-  while (true) {
-    c.movePosition (QTextCursor::Up);
-    if (c.block ().text ().isEmpty ()) {
-      c.deleteChar ();
-      continue;
-    }
-    break;
-  }
-}
-
 void IncludeModifier::unfoldDocument () {
   for (auto i = 0, end = textDocument_->blockCount (); i < end; ++i) {
     auto block = textDocument_->findBlockByNumber (i);

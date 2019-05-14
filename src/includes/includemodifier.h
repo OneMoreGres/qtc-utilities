@@ -18,7 +18,6 @@ class IncludeModifier {
 
   private:
     void removeIncludeAt (int line);
-    void removeNewLinesBefore (int line);
     void unfoldDocument ();
     bool isGroupRemoved (int line) const;
     void removeTillNextGroup (int line);
