@@ -28,6 +28,9 @@ void IncludeModifier::queueDuplicatesRemoval () {
   QTC_ASSERT (document_, return );
   QSet<QString> used;
   for (const auto &include: document_->resolvedIncludes ()) {
+    if (include.line () < 1) {
+      continue;
+    }
     if (!used.contains (include.resolvedFileName ())) {
       used.insert (include.resolvedFileName ());
       continue;
@@ -40,6 +43,9 @@ void IncludeModifier::queueDuplicatesRemoval () {
 void IncludeModifier::queueUpdates (const IncludeTree &tree) {
   const auto become = tree.includes ();
   for (const auto &include: document_->resolvedIncludes ()) {
+    if (include.line () < 1) {
+      continue;
+    }
     if (!become.contains (include.resolvedFileName ())) {
       qDebug () << "remove include" << include.line () << include.unresolvedFileName ();
       removeIncludeAt (include.line () - 1);
