@@ -6,146 +6,77 @@
 
 #include <utils/qtcassert.h>
 
-using namespace Core;
-using namespace CppTools;
 using namespace CPlusPlus;
 
+static bool hasNonForwardDeclaration (const QList<LookupItem> &matches) {
+  auto ok = false;
+  for (const auto &i: matches) {
+    ok |= (i.declaration () && !i.declaration ()->isForwardClassDeclaration ());
+  }
+  return ok;
+}
+
 IncludeExtractor::IncludeExtractor (Document::Ptr document,
-                                    const Snapshot &snapshot, bool useLocator) :
+                                    const Snapshot &snapshot) :
   ASTVisitor (document ? document->translationUnit () : nullptr),
   document_ (document),
-  locatorFilter_ (nullptr) {
+  snapshot_ (snapshot),
+  bindings_ (new CreateBindings (document, snapshot)) {
+  QTC_ASSERT (document, return );
+
+  //  bindings_->setExpandTemplates (true);
 
   if (!translationUnit () || !translationUnit ()->ast ()) {
     return;
   }
 
-  if (useLocator) {
-    initLocatorFilter ();
-  }
-
-  expressionType_.init (document, snapshot);
-
   accept (translationUnit ()->ast ());
-
-  //  Scope *previousScope = switchScope(_doc->globalNamespace());
-  //  for (DeclarationListAST *it = ast->declaration_list; it; it = it->next) {
-  //      this->declaration(it->value);
-  //  }
 }
-
-void IncludeExtractor::initLocatorFilter () {
-  //  locatorFilter_ = CppModelManager::instance ()->classesFilter ();
-}
-
 
 bool IncludeExtractor::visit (NamedTypeSpecifierAST *ast) {
-  const auto typeName = overview_ (ast->name->name);
-  qCritical () << "NamedTypeSpecifierAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->name || !ast->name->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->name->name);
+  qCritical () << "NamedTypeSpecifierAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-
-  const auto hasNonForward = hasNonForwardDeclaration (matches);
-  for (const auto &match: matches) {
-    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
-      continue;
-    }
-    add (match);
-  }
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
-
 bool IncludeExtractor::visit (DeclaratorIdAST *ast) {
-  const auto typeName = overview_ (ast->name->name);
-  qCritical () << "DeclaratorIdAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->name || !ast->name->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->name->name);
+  qCritical () << "DeclaratorIdAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-
-  const auto hasNonForward = hasNonForwardDeclaration (matches);
-  for (const auto &match: matches) {
-    const auto matchType = overview_ (match.type ());
-    qCritical () << matchType << match.declaration ();
-    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
-      continue;
-    }
-    add (match);
-
-    if (matchType.isEmpty ()) {
-      continue;
-    }
-
-    const auto matches = expressionType_ (matchType.toUtf8 (), match.scope ());
-    for (const auto &match: matches) {
-      add (match);
-    }
-
-    expressionType_ (matchType.toUtf8 (), match.scope ());
-    accept (expressionType_.ast ());
-  }
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
 bool IncludeExtractor::visit (IdExpressionAST *ast) {
-  const auto typeName = overview_ (ast->name->name);
-  qCritical () << "IdExpressionAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->name || !ast->name->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->name->name);
+  qCritical () << "IdExpressionAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-
-  static QMap<QString, Scope *> typesToExpand;
-  const auto isFirstLevel = typesToExpand.isEmpty ();
-
-  const auto hasNonForward = hasNonForwardDeclaration (matches);
-  for (const auto &match: matches) {
-    qCritical () << "IdExpressionAST match" << overview_ (match.type ())
-                 << match.declaration () << hasNonForward
-                 << match.type ().isTypedef () << isFirstLevel;
-    if (hasNonForward
-        && match.declaration ()->isForwardClassDeclaration ()
-        && !match.type ().isTypedef ()) {
-      continue;
-    }
-    add (match);
-
-    typesToExpand.insert (overview_ (match.type ()), match.scope ());
-  }
-
-  if (!isFirstLevel) {
-    return true;
-  }
-
-  while (true) {
-    const auto localCopy = typesToExpand;
-    for (auto it = localCopy.cbegin (), end = localCopy.cend (); it != end; ++it) {
-      expressionType_ (it.key ().toUtf8 (), it.value ());
-      accept (expressionType_.ast ());
-    }
-    if (localCopy.size () == typesToExpand.size ()) {
-      break;
-    }
-  }
-  typesToExpand.clear ();
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
 bool IncludeExtractor::visit (CallAST *ast) {
+  QTC_ASSERT (ast, return false);
   qCritical () << "CallAST";
   const auto scope = scopeAtToken (ast->firstToken ());
+  QTC_ASSERT (scope, return true);
   QTC_ASSERT (ast->base_expression, return true);
   addExpression (ast->base_expression, scope);
 
@@ -160,56 +91,41 @@ bool IncludeExtractor::visit (CallAST *ast) {
 }
 
 bool IncludeExtractor::visit (TemplateIdAST *ast) {
-  const auto typeName = overview_ (ast->name);
-  qCritical () << "TemplateIdAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->name);
+  qCritical () << "TemplateIdAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-  const auto hasNonForward = hasNonForwardDeclaration (matches);
-
-  for (const auto &match: matches) {
-    if (hasNonForward && match.declaration ()->isForwardClassDeclaration ()) {
-      continue;
-    }
-    add (match);
-  }
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
 bool IncludeExtractor::visit (UsingDirectiveAST *ast) {
-  const auto typeName = overview_ (ast->name->name);
-  qCritical () << "UsingDirectiveAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->name || !ast->name->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->name->name);
+  qCritical () << "UsingDirectiveAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-
-  for (const auto &match: matches) {
-    add (match);
-  }
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
 bool IncludeExtractor::visit (MemberAccessAST *ast) {
-  const auto typeName = overview_ (ast->member_name->name);
-  qCritical () << "MemberAccessAST" << typeName;
-  if (typeName.isEmpty ()) {
+  QTC_ASSERT (ast, return false);
+  if (!ast->member_name || !ast->member_name->name) {
     return true;
   }
-
+  const auto name = Overview () (ast->member_name->name);
+  qCritical () << "MemberAccessAST" << name;
   const auto scope = scopeAtToken (ast->firstToken ());
-  const auto matches = expressionType_ (ast, document_, scope);
-  for (const auto &match: matches) {
-    add (match);
-  }
-
+  QTC_ASSERT (scope, return true);
+  addExpression (name, scope);
   return true;
 }
 
@@ -221,33 +137,72 @@ Scope *IncludeExtractor::scopeAtToken (unsigned token) const {
   return document_->scopeAt (line);
 }
 
-QString IncludeExtractor::fileNameViaLocator (const QString &name, int types) {
-  if (locatorFilter_) {
-    QFutureInterface<LocatorFilterEntry> dummy;
-    auto matches = locatorFilter_->matchesFor (dummy, name);
-
-    QString overscopedName = QStringLiteral ("::") + name;
-    auto match = std::find_if (matches.cbegin (), matches.cend (),
-                               [&name, types, overscopedName](const LocatorFilterEntry &i) {
-      auto item = i.internalData.value<IndexItem::Ptr>();
-      if (!(item->type () & types)) {
-        return false;
-      }
-      auto fullName = item->scopedSymbolName ();
-      return fullName == name || fullName.endsWith (overscopedName);
-    });
-
-    if (match != matches.end ()) {
-      auto item = (*match).internalData.value<IndexItem::Ptr>();
-      qCritical () << "found via locator" << item->scopedSymbolName () << item->fileName ();
-      return item->fileName ();
-    }
+void IncludeExtractor::addExpression (const QString &name, CPlusPlus::Scope *scope) {
+  if (name.isEmpty ()) {
+    return;
   }
-  return {};
+  QTC_ASSERT (scope, return );
+
+  const auto pair = qMakePair (name, scope);
+  if (checkedTypes_.contains (pair)) {
+    return;
+  }
+  checkedTypes_.insert (pair);
+  qCritical () << "add string expression" << name;
+
+  TypeOfExpression toe;
+  toe.init (document_, snapshot_, bindings_);
+  const auto matches = toe (name.toUtf8 (), scope);
+
+  addDeclarations (matches);
+
+  if (toe.ast ()) {
+    accept (toe.ast ());
+  }
 }
 
-bool IncludeExtractor::add (const LookupItem &lookup) {
-  const auto declaration = lookup.declaration ();
+void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
+  QTC_ASSERT (scope, return );
+  QTC_ASSERT (ast, return );
+  QString callName;
+  if (auto e = ast->asIdExpression ()) {
+    callName = Overview () (e->name->name);
+  }
+  else if (auto e = ast->asMemberAccess ()) {
+    callName = Overview () (e->member_name->name);
+  }
+  qCritical () << "add ast expression" << callName;
+
+  TypeOfExpression toe;
+  toe.init (document_, snapshot_, bindings_);
+  const auto matches = toe (ast, document_, scope);
+
+  addDeclarations (matches);
+
+  if (toe.ast ()) {
+    accept (toe.ast ());
+  }
+}
+
+void IncludeExtractor::addDeclarations (const QList<LookupItem> &declarations) {
+  const auto hasNonForward = hasNonForwardDeclaration (declarations);
+
+  for (const auto &match: declarations) {
+    const auto matchType = Overview ()(match.type ());
+    if (hasNonForward
+        && match.declaration ()
+        && match.declaration ()->isForwardClassDeclaration ()
+        && !match.type ().isTypedef ()) {
+      continue;
+    }
+    addDeclaration (match.declaration ());
+
+    QTC_ASSERT (match.scope (), continue);
+    addExpression (matchType, match.scope ());
+  }
+}
+
+bool IncludeExtractor::addDeclaration (Symbol *declaration) {
   if (!declaration
       || document_->fileName () == QString::fromUtf8 (declaration->fileName ())) {
     return false;
@@ -258,107 +213,11 @@ bool IncludeExtractor::add (const LookupItem &lookup) {
   includes_.insert (fileName);
   symbols_.insert (declaration);
 
-  qCritical () <<  " add"
-               << overview_ (lookup.type ().type ())
+  qCritical () << ">>>addDeclaration"
                << "at" << fileName
                << declaration
                << typeid (*declaration).name ()
-               << overview_ (declaration->type ().type ());
+               << Overview () (declaration->type ().type ());
 
   return true;
-}
-
-
-//bool IncludeExtractor::addType (const QString &typeName, Scope *scope) {
-//  auto added = false;
-
-//  const auto matches = expressionType_ (typeName.toUtf8 (), scope);
-
-//  for (const auto &match: matches) {
-//    const auto declaration = match.declaration ();
-//    if (!declaration
-//        || declaration->isForwardClassDeclaration ()) {
-//      continue;
-//    }
-
-//    QTC_ASSERT (declaration->fileName (), continue);
-//    const auto fileName = QString::fromUtf8 (declaration->fileName ());
-//    includes_.insert (fileName);
-//    added = true;
-
-//    qCritical () <<  " found type" << typeName << "at" << fileName
-//              << overview_ (match.type ().type ())
-//              << overview_ (declaration->type ().type ());
-//    if (declaration->isTemplate ()) {
-//      break;
-//    }
-//  }
-
-//  return added;
-//}
-
-//bool IncludeExtractor::addTypedItems (const QList<LookupItem> &items,
-//                                      const QString &name, Scope *scope) {
-//  auto added = false;
-
-//  for (const auto &match: items) {
-//    const auto declaration = match.declaration ();
-//    if (!declaration || declaration->isForwardClassDeclaration ()) {
-//      continue;
-//    }
-
-//    QTC_ASSERT (declaration->fileName (), continue);
-//    const auto fileName = QString::fromUtf8 (declaration->fileName ());
-//    includes_.insert (fileName);
-//    added = true;
-
-//    qCritical () <<  " found" << name << "at" << fileName;
-//    auto typeName = overview_ (match.type ().type ());
-//    if (!typeName.isEmpty ()) {
-//      addType (typeName, scope);
-//    }
-//  }
-
-//  return added;
-//}
-
-const QSet<QString> &IncludeExtractor::includes () const {
-  return includes_;
-}
-
-void IncludeExtractor::addExpression (ExpressionAST *ast, Scope *scope) {
-  QString callName;
-  if (auto e = ast->asIdExpression ()) {
-    callName = overview_ (e->name->name);
-  }
-  else if (auto e = ast->asMemberAccess ()) {
-    callName = overview_ (e->member_name->name);
-  }
-  qCritical () << "addExpression" << callName;
-
-  const auto matches = expressionType_ (ast, document_, scope);
-  accept (expressionType_.ast ());
-  for (const auto &match: matches) {
-    add (match);
-  }
-
-  //  if (!addTypedItems (matches, callName, scope) && !callName.isEmpty ()
-  //      && !ast->asMemberAccess ()) {
-  //    addViaLocator (callName, IndexItem::All);
-  //  }
-}
-
-bool IncludeExtractor::hasNonForwardDeclaration (const QList<LookupItem> &matches) const {
-  auto ok = false;
-  for (const auto &i: matches) {
-    ok |= (i.declaration () && !i.declaration ()->isForwardClassDeclaration ());
-  }
-  return ok;
-}
-
-void IncludeExtractor::addViaLocator (const QString &name, int types) {
-  auto fileName = fileNameViaLocator (name, types);
-  if (!fileName.isEmpty ()) {
-    includes_.insert (fileName);
-  }
 }

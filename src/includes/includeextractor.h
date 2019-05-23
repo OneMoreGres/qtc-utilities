@@ -3,15 +3,14 @@
 #include <cplusplus/Overview.h>
 #include <cplusplus/TypeOfExpression.h>
 
-#include <cpptools/cpplocatorfilter.h>
-
 #include <cplusplus/CppDocument.h>
+
+#include <QDebug>
 
 class IncludeExtractor : public CPlusPlus::ASTVisitor {
   public:
     IncludeExtractor (CPlusPlus::Document::Ptr document,
-                      const CPlusPlus::Snapshot &snapshot,
-                      bool useLocator);
+                      const CPlusPlus::Snapshot &snapshot);
 
     bool visit (CPlusPlus::NamedTypeSpecifierAST *) override;
     bool visit (CPlusPlus::DeclaratorIdAST *) override;
@@ -21,28 +20,25 @@ class IncludeExtractor : public CPlusPlus::ASTVisitor {
     bool visit (CPlusPlus::UsingDirectiveAST *) override;
     bool visit (CPlusPlus::MemberAccessAST *) override;
 
-    const QSet<QString> &includes () const;
+    const QSet<QString> &includes () const {
+      return includes_;
+    }
     const QSet<CPlusPlus::Symbol *> &symbols () const {
       return symbols_;
     }
 
   private:
-    void initLocatorFilter ();
     CPlusPlus::Scope *scopeAtToken (unsigned token) const;
-    void addViaLocator (const QString &name, int types);
-    QString fileNameViaLocator (const QString &name, int types);
-    bool add (const CPlusPlus::LookupItem &lookup);
+    void addExpression (const QString &name, CPlusPlus::Scope *scope);
     void addExpression (CPlusPlus::ExpressionAST *ast, CPlusPlus::Scope *scope);
-    //    bool addType (const QString &typeName, CPlusPlus::Scope *scope);
-    //    bool addTypedItems (const QList<CPlusPlus::LookupItem> &items,
-    //                        const QString &name, CPlusPlus::Scope *scope);
-    bool hasNonForwardDeclaration (const QList<CPlusPlus::LookupItem> &matches) const;
+    void addDeclarations (const QList<CPlusPlus::LookupItem> &declarations);
+    bool addDeclaration (CPlusPlus::Symbol *declaration);
 
   private:
     CPlusPlus::Document::Ptr document_;
-    Core::ILocatorFilter *locatorFilter_;
-    CPlusPlus::TypeOfExpression expressionType_;
-    CPlusPlus::Overview overview_;
+    const CPlusPlus::Snapshot &snapshot_;
+    QSharedPointer<CPlusPlus::CreateBindings> bindings_;
+    QSet<QPair<QString, CPlusPlus::Scope *> > checkedTypes_;
     QSet<QString> includes_;
     QSet<CPlusPlus::Symbol *> symbols_;
 

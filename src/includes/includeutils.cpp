@@ -208,7 +208,7 @@ namespace QtcUtilities {
         //          return;
         //        }
 
-        IncludeExtractor extractor (cppDocument, snapshot, false);
+        IncludeExtractor extractor (cppDocument, snapshot);
         qCritical () << "current" << cppDocument->fileName ();
         IncludeTree tree (cppDocument->fileName ());
         tree.build (snapshot);
