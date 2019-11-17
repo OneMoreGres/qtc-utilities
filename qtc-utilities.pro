@@ -26,7 +26,8 @@ SOURCES += \
     src/includes/includeutils.cpp \
     src/includes/includetree.cpp \
     src/includes/includeextractor.cpp \
-    src/includes/includemodifier.cpp
+    src/includes/includemodifier.cpp \
+    src/scrollbars/scrollbarscolorizer.cpp
 
 HEADERS += \
     src/Constants.h \
@@ -55,7 +56,8 @@ HEADERS += \
     src/includes/includeutils.h \
     src/includes/includetree.h \
     src/includes/includeextractor.h \
-    src/includes/includemodifier.h
+    src/includes/includemodifier.h \
+    src/scrollbars/scrollbarscolorizer.h
 
 TRANSLATIONS += \
     translation/QtcUtilities_ru.ts

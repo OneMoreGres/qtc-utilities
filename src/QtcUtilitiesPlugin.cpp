@@ -3,6 +3,7 @@
 #include "codediscover/CodeDiscover.h"
 #include "ci/Ci.h"
 #include "includes/includeutils.h"
+#include "scrollbars/scrollbarscolorizer.h"
 
 #include <coreplugin/icore.h>
 
@@ -36,6 +37,7 @@ namespace QtcUtilities {
       new CodeDiscover::CodeDiscover (this);
       new Ci::Ci (this);
       new IncludeUtils::IncludeUtils (this);
+      new ScrollBarsColorizer::ScrollBarsColorizer(this);
 
       initTranslation ();
       return true;
