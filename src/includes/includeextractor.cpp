@@ -131,8 +131,8 @@ bool IncludeExtractor::visit (MemberAccessAST *ast) {
 
 Scope *IncludeExtractor::scopeAtToken (unsigned token) const {
   QTC_ASSERT (translationUnit (), return nullptr);
-  unsigned line = 0;
-  unsigned column = 0;
+  int line = 0;
+  int column = 0;
   translationUnit ()->getTokenStartPosition (token, &line, &column);
   return document_->scopeAt (line);
 }
