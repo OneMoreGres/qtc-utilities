@@ -6,12 +6,6 @@ include(paths.pri)
 
 SOURCES += \
     src/QtcUtilitiesPlugin.cpp \
-    src/organizeincludes/IncludesOrganizer.cpp \
-    src/organizeincludes/IncludesOptionsPage.cpp \
-    src/organizeincludes/Include.cpp \
-    src/organizeincludes/IncludeMap.cpp \
-    src/organizeincludes/IncludesExtractor.cpp \
-    src/organizeincludes/Document.cpp \
     src/codediscover/CodeDiscover.cpp \
     src/codediscover/CodeDiscoverOptionsPage.cpp \
     src/codediscover/CodeDiscoverWindow.cpp \
@@ -32,14 +26,6 @@ SOURCES += \
 HEADERS += \
     src/Constants.h \
     src/QtcUtilitiesPlugin.h \
-    src/organizeincludes/IncludesOrganizer.h \
-    src/organizeincludes/IncludesSettings.h \
-    src/organizeincludes/IncludesOptionsPage.h \
-    src/organizeincludes/IncludesConstants.h \
-    src/organizeincludes/Include.h \
-    src/organizeincludes/IncludeMap.h \
-    src/organizeincludes/IncludesExtractor.h \
-    src/organizeincludes/Document.h \
     src/codediscover/CodeDiscover.h \
     src/codediscover/CodeDiscoverConstants.h \
     src/codediscover/CodeDiscoverSettings.h \

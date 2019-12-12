@@ -1,5 +1,4 @@
 #include "QtcUtilitiesPlugin.h"
-#include "organizeincludes/IncludesOrganizer.h"
 #include "codediscover/CodeDiscover.h"
 #include "ci/Ci.h"
 #include "includes/includeutils.h"
@@ -33,7 +32,6 @@ namespace QtcUtilities {
       // In the initialize function, a plugin can be sure that the plugins it
       // depends on have initialized their members.
 
-      new OrganizeIncludes::IncludesOrganizer (this);
       new CodeDiscover::CodeDiscover (this);
       new Ci::Ci (this);
       new IncludeUtils::IncludeUtils (this);
