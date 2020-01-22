@@ -1,0 +1,37 @@
+import common as c
+from config import qtc_version, os_name
+import os
+
+c.print('>> Downloading Qt Creator {} for {}'.format(qtc_version, os_name))
+
+if os_name == 'linux':
+    os_url = 'linux_gcc_64_rhel72'
+elif os_name == 'win32':
+    os_url = 'windows_msvc2017_x86'
+elif os_name == 'win64':
+    os_url = 'windows_msvc2017_x64'
+elif os_name == 'macos':
+    os_url = 'mac_x64'
+
+src_base = 'qt-creator-opensource-src-' + qtc_version
+qtc_dir = src_base
+qtc_main_version = qtc_version[:qtc_version.rindex('.')]
+base_url = 'https://download.qt.io/official_releases/qtcreator/{}/{}'\
+    .format(qtc_main_version, qtc_version)
+
+src_ext = 'zip' if os_name.startswith('win') else 'tar.xz'
+src_archive = src_base + '.' + src_ext
+c.download(base_url + '/' + src_archive, src_archive)
+c.extract(src_archive, '.')
+
+for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
+    url = base_url + '/installer_source/{}/{}'.format(os_url, archive)
+    c.download(url, archive)
+    c.extract(archive, qtc_dir)
+
+c.symlink(qtc_dir, 'qtcreator')
+
+if os_name == 'macos':
+    os.makedirs('qtcreator/bin', exist_ok=True)
+    c.symlink(os.path.abspath('qtcreator/Qt Creator.app'),
+              'qtcreator/bin/Qt Creator.app')

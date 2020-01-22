@@ -1,5 +1,7 @@
 # Qt Creator utilities
 
+![build status](https://github.com/OneMoreGres/qtc-utilities/workflows/Plugin%20build/badge.svg)
+
 Different useful/useless utilities.
 
 ## Organize includes

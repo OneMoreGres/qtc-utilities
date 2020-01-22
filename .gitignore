@@ -1,2 +1,4 @@
 *.pro.user
 *.qm
+.vscode
+__pycache__
