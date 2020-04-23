@@ -13,20 +13,13 @@ elif os_name == 'win64':
 elif os_name == 'macos':
     os_url = 'mac_x64'
 
-src_base = 'qt-creator-opensource-src-' + qtc_version
-qtc_dir = src_base
 qtc_main_version = qtc_version[:qtc_version.rindex('.')]
-base_url = 'https://download.qt.io/official_releases/qtcreator/{}/{}'\
-    .format(qtc_main_version, qtc_version)
+base_url = 'https://download.qt.io/official_releases/qtcreator/{}/{}/installer_source/{}'\
+    .format(qtc_main_version, qtc_version, os_url)
 
-src_ext = 'zip' if os_name.startswith('win') else 'tar.xz'
-src_archive = src_base + '.' + src_ext
-c.download(base_url + '/' + src_archive, src_archive)
-c.extract(src_archive, '.')
-
+qtc_dir = 'qtcreator-{}'.format(qtc_version)
 for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
-    url = base_url + '/installer_source/{}/{}'.format(os_url, archive)
-    c.download(url, archive)
+    c.download(base_url + '/' + archive, archive)
     c.extract(archive, qtc_dir)
 
 c.symlink(qtc_dir, 'qtcreator')

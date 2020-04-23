@@ -119,7 +119,7 @@ namespace QtcUtilities {
 
         auto factories = Core::IEditorFactory::allEditorFactories ();
         for (const auto f: factories) {
-          if (auto text = qobject_cast<TextEditor::TextEditorFactory *>(f)) {
+          if (auto text = dynamic_cast<TextEditor::TextEditorFactory *>(f)) {
             text->addHoverHandler (new WeightHoverHandle);
           }
         }
