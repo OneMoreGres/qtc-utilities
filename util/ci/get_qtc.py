@@ -25,9 +25,10 @@ src_archive = src_base + '.' + src_ext
 c.download(base_url + '/' + src_archive, src_archive)
 c.extract(src_archive, '.')
 
-if os.name == 'macos':
+if os_name == 'macos':
+    c.print('>> Workaround')
     shutil.rmtree(
-        'src/shared/qbs/examples/cocoa-application/CocoaApplication/en_US.lproj', ignore_errors=True)
+        qtc_dir + '/src/shared/qbs/examples/cocoa-application/CocoaApplication/en_US.lproj', ignore_errors=True)
 
 for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
     url = base_url + '/installer_source/{}/{}'.format(os_url, archive)
