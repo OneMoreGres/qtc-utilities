@@ -1,6 +1,7 @@
 import common as c
 from config import qtc_version, os_name
 import os
+import shutil
 
 c.print('>> Downloading Qt Creator {} for {}'.format(qtc_version, os_name))
 
@@ -23,6 +24,10 @@ src_ext = 'zip' if os_name.startswith('win') else 'tar.xz'
 src_archive = src_base + '.' + src_ext
 c.download(base_url + '/' + src_archive, src_archive)
 c.extract(src_archive, '.')
+
+if os.name == 'macos':
+    shutil.rmtree(
+        'src/shared/qbs/examples/cocoa-application/CocoaApplication/en_US.lproj', ignore_errors=True)
 
 for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
     url = base_url + '/installer_source/{}/{}'.format(os_url, archive)
