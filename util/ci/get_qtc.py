@@ -2,6 +2,7 @@ import common as c
 from config import qtc_version, os_name
 import os
 import shutil
+import glob
 
 c.print('>> Downloading Qt Creator {} for {}'.format(qtc_version, os_name))
 
@@ -34,6 +35,15 @@ for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
     url = base_url + '/installer_source/{}/{}'.format(os_url, archive)
     c.download(url, archive)
     c.extract(archive, qtc_dir)
+
+if os_name.startswith('win'):
+    c.print('>> Workaround (renaming .libs)')
+    for name in glob.glob('{}/lib/qtcreator/**/*.lib'.format(qtc_dir), recursive=True):
+        if name.endswith('4.lib'):
+            continue
+        newname = name[:-4]+'4.lib'
+        os.rename(name, newname)
+        c.print('{} -> {}'.format(name, newname))
 
 c.symlink(qtc_dir, 'qtcreator')
 
