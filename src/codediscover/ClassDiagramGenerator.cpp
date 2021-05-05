@@ -80,8 +80,7 @@ namespace QtcUtilities {
         selected_ = symbol;
         selectedHierarchy_ << symbol;
 
-        auto builder = TypeHierarchyBuilder (symbol, snapshot_);
-        auto hierarchy = builder.buildDerivedTypeHierarchy ();
+        auto hierarchy = TypeHierarchyBuilder::buildDerivedTypeHierarchy (symbol, snapshot_);
         addToSelectedHierarchy (hierarchy);
         processHierarchy (hierarchy);
 

@@ -181,7 +181,7 @@ namespace QtcUtilities {
                 if (!log.isEmpty ()) {
                   QString msg = ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" + QString::fromUtf8 (log)
                                 + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
-                  Core::MessageManager::write (msg, Core::MessageManager::WithFocus);
+                  Core::MessageManager::writeFlashing(msg);
                 }
               }
               break;
