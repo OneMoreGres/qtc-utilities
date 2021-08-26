@@ -59,7 +59,8 @@ namespace QtcUtilities {
       if (language.isEmpty ()) {
         return;
       }
-      auto paths = QStringList () << ICore::resourcePath () << ICore::userResourcePath ();
+      auto paths = QStringList () << ICore::resourcePath ().toString ()
+                                  << ICore::userResourcePath ().toString ();
       QString trFile = QLatin1String ("QtcUtilities_") + language;
       auto translator = new QTranslator (this);
       for (const auto &path: paths) {

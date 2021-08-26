@@ -39,9 +39,9 @@ for archive in ['qtcreator.7z', 'qtcreator_dev.7z']:
 if os_name.startswith('win'):
     c.print('>> Workaround (renaming .libs)')
     for name in glob.glob('{}/lib/qtcreator/**/*.lib'.format(qtc_dir), recursive=True):
-        if name.endswith('4.lib'):
+        if name.endswith('5.lib'):
             continue
-        newname = name[:-4]+'4.lib'
+        newname = name[:-4]+'5.lib'
         os.rename(name, newname)
         c.print('{} -> {}'.format(name, newname))
 
@@ -51,3 +51,14 @@ if os_name == 'macos':
     os.makedirs('qtcreator/bin', exist_ok=True)
     c.symlink(os.path.abspath('qtcreator/Qt Creator.app'),
               'qtcreator/bin/Qt Creator.app')
+
+# modify sources
+modify_data = ''
+modify_file = 'qtcreator/src/libs/clangsupport/clangsupport_dependencies.pri'
+with open(modify_file, 'r') as f:
+    modify_data = f.read()
+
+if modify_data.find('Clangsupport') != -1:
+    modify_data = modify_data.replace('Clangsupport', 'ClangSupport')
+    with open(modify_file, 'w') as f:
+        f.write(modify_data)
